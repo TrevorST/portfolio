@@ -28,6 +28,10 @@ for (const path of PAGES) {
     await expect(page.locator('h1').first()).toBeVisible();
     await expect(page).toHaveTitle(/Trevor Taylor/);
 
+    // canonical is the clean URL Vercel serves: same path, no .html
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(new URL(canonical!).pathname).toBe(path);
+
     // no horizontal scroll at any viewport
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
