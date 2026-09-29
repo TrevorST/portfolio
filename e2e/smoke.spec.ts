@@ -65,7 +65,8 @@ test.describe('flat terminal', () => {
   test('boots and runs commands', async ({ page }) => {
     await page.goto('/?flat#terminal');
     const log = page.getByRole('log', { name: 'Terminal output' });
-    await expect(log).toContainText('// READY //');
+    // the boot animates for ~0.7s; CI runners can be much slower
+    await expect(log).toContainText('// READY //', { timeout: 10_000 });
 
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.fill('help');
@@ -81,7 +82,9 @@ test.describe('flat terminal', () => {
 
   test('open navigates to a project page', async ({ page }) => {
     await page.goto('/?flat#terminal');
-    await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY');
+    await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY', {
+      timeout: 10_000,
+    });
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.fill('open circleflow');
     await input.press('Enter');
@@ -118,7 +121,8 @@ test.describe('3D hero', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('html')).toHaveAttribute('data-hero', '3d');
-    expect(heavy).toEqual([]);
+    const trigger = await page.locator('[data-hero-root]').getAttribute('data-load-trigger');
+    expect(heavy, `3D loaded early, triggered by: ${trigger}`).toEqual([]);
     await scrollHero(page, 0.05);
     await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '');
     expect(heavy.length).toBeGreaterThan(0);

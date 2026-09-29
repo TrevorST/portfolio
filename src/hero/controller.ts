@@ -45,7 +45,7 @@ if (root && html.dataset.hero === '3d') {
   const load = () => {
     if (loading) return;
     loading = true;
-    for (const type of TRIGGERS) removeEventListener(type, load);
+    for (const type of TRIGGERS) removeEventListener(type, onIntent);
     const data = JSON.parse(
       document.getElementById('terminal-data')?.textContent ?? 'null',
     ) as SiteData;
@@ -67,6 +67,8 @@ if (root && html.dataset.hero === '3d') {
       .catch(fallBackToFlat);
   };
 
+  // Only genuine interaction loads the 3D stage: layout, scroll restoration
+  // and synthetic pointer events during page load don't count.
   const TRIGGERS = [
     'pointermove',
     'pointerdown',
@@ -75,10 +77,25 @@ if (root && html.dataset.hero === '3d') {
     'keydown',
     'scroll',
   ] as const;
-  for (const type of TRIGGERS) addEventListener(type, load, { passive: true, once: true });
+  function onIntent(e: Event) {
+    if (e.type === 'scroll' && scrollY < 8) return;
+    if (
+      e.type === 'pointermove' &&
+      e instanceof PointerEvent &&
+      (e.pointerType !== 'mouse' || (e.movementX === 0 && e.movementY === 0))
+    )
+      return;
+    root!.dataset.loadTrigger = e.type; // visible in devtools and test failures
+    load();
+  }
+  for (const type of TRIGGERS) addEventListener(type, onIntent, { passive: true });
 
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', onScroll, { passive: true });
   measure();
-  if (progress > 0) load(); // arrived mid-page (reload, back button, #terminal)
+  if (progress > 0) {
+    // arrived mid-page (reload, back button, #terminal)
+    root.dataset.loadTrigger = 'deep-link';
+    load();
+  }
 }
