@@ -1,4 +1,5 @@
 ---
+import { existsSync } from 'node:fs';
 import Base from '~/layouts/Base.astro';
 import Tag from '~/components/Tag.astro';
 import SectionHead from '~/components/SectionHead.astro';
@@ -29,76 +30,126 @@ const activeCount = projects.filter(
 ).length;
 const visibleCommands = commands.filter((c) => !c.hidden).length;
 const pad = (n: number) => String(n).padStart(2, '0');
+// a modelled TRV-01 replaces the placeholder when present (doc/3D-MODEL.md)
+const hasModel = existsSync('public/models/trv01.glb');
 ---
 
 <Base>
-  <header class="hero">
-    <LifeCanvas />
-    <div class="hero-meta mono dim">
-      <span>PORTFOLIO // {site.name.toUpperCase()}</span>
-      <span data-clock>UTC --:--:--</span>
-      <span>
-        BUILD {build.version} · {build.commit}
-      </span>
-    </div>
-    <Tag label={site.role} />
-    <h1>
-      Trevor
-      <br />
-      <span class="glitch" data-t="Taylor">
-        Taylor
-      </span>
-      <br />
-      <span class="thin">builds tools</span>
-    </h1>
-    <div class="hero-foot">
-      <p class="lede">
-        Software engineer at Toyota. I build the platform other teams ship on: CI/CD, database
-        migrations, zero-downtime schema checks. ~60 days to production, now under 3 hours.
-      </p>
-      <dl class="kv">
-        {current && (
-          <>
-            <dt>Now</dt>
+  <section
+    slot="wide"
+    class="hero"
+    data-hero-root
+    data-model={hasModel ? 'glb' : 'placeholder'}
+    aria-label="Intro"
+  >
+    <script is:inline>
+      // Pick the hero before it paints: the 3D computer, or the flat terminal for
+      // reduced motion, Save-Data, no WebGL, low-memory devices or ?flat.
+      (() => {
+        let mode = '3d';
+        try {
+          const n = navigator;
+          if (
+            new URLSearchParams(location.search).has('flat') ||
+            matchMedia('(prefers-reduced-motion: reduce)').matches ||
+            n.connection?.saveData ||
+            (n.deviceMemory && n.deviceMemory < 2) ||
+            !('WebGLRenderingContext' in window)
+          )
+            mode = 'flat';
+        } catch {
+          mode = 'flat';
+        }
+        document.documentElement.dataset.hero = mode;
+      })();
+    </script>
+    <div class="stage">
+      <canvas class="gl" data-hero-canvas aria-hidden="true"></canvas>
+      <header class="intro">
+        <LifeCanvas />
+        <div class="hero-meta mono dim">
+          <span>PORTFOLIO // {site.name.toUpperCase()}</span>
+          <span data-clock>UTC --:--:--</span>
+          <span>
+            BUILD {build.version} · {build.commit}
+          </span>
+        </div>
+        <Tag label={site.role} />
+        <h1>
+          Trevor
+          <br />
+          <span class="glitch" data-t="Taylor">
+            Taylor
+          </span>
+          <br />
+          <span class="thin">builds tools</span>
+        </h1>
+        <div class="hero-foot">
+          <p class="lede">
+            Software engineer at Toyota. I build the platform other teams ship on: CI/CD, database
+            migrations, zero-downtime schema checks. ~60 days to production, now under 3 hours.
+          </p>
+          <dl class="kv">
+            {current && (
+              <>
+                <dt>Now</dt>
+                <dd>
+                  {current.data.role} · {current.data.org}
+                </dd>
+              </>
+            )}
+            <dt>Projects</dt>
+            <dd>{pad(projects.length)} on file</dd>
+            <dt>Active</dt>
+            <dd>{pad(activeCount)} in development</dd>
+            <dt>Writing</dt>
             <dd>
-              {current.data.role} · {current.data.org}
+              {pad(posts.length)} {posts.length === 1 ? 'post' : 'posts'}
             </dd>
-          </>
-        )}
-        <dt>Projects</dt>
-        <dd>{pad(projects.length)} on file</dd>
-        <dt>Active</dt>
-        <dd>{pad(activeCount)} in development</dd>
-        <dt>Writing</dt>
-        <dd>
-          {pad(posts.length)} {posts.length === 1 ? 'post' : 'posts'}
-        </dd>
-        <dt>Terminal</dt>
-        <dd>{visibleCommands} commands, some unlisted</dd>
-      </dl>
-      <div class="cta">
-        <a class="btn" href="#work">
-          View work ▸
-        </a>
-        <a class="btn ghost" href="#terminal">
-          Open terminal
-        </a>
-      </div>
+            <dt>Terminal</dt>
+            <dd>{visibleCommands} commands, some unlisted</dd>
+          </dl>
+          <div class="cta">
+            <a class="btn" href="#work">
+              View work ▸
+            </a>
+            <a class="btn ghost" href="#terminal">
+              Open terminal
+            </a>
+          </div>
+        </div>
+      </header>
+      <p class="hint mono" aria-hidden="true">
+        <span class="h-intro">Scroll to boot ↓</span>
+        <span class="h-hold h-fine">Type to use the terminal · Esc releases · scroll on</span>
+        <span class="h-hold h-coarse">Tap the screen to type · scroll on</span>
+      </p>
+      <input
+        class="hero-input"
+        data-hero-input
+        type="text"
+        aria-label="Terminal command"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        enterkeyhint="send"
+      />
+      <div
+        class="sr-only hero-log"
+        role="log"
+        aria-live="polite"
+        aria-label="Terminal output"
+        data-hero-log
+      ></div>
     </div>
-  </header>
-
-  <section class="section" aria-labelledby="terminal">
-    <SectionHead
-      idx="01"
-      title="Terminal"
-      id="terminal"
-      meta={`TRV.SYS ${build.version} // INTERACTIVE`}
-    />
-    <div class="term-grid">
+    <span id="terminal" class="anchor" aria-hidden="true"></span>
+    <div class="flat-term">
       <div class="term-copy">
+        <p class="tag">
+          <span>TRV.SYS {build.version} // Terminal</span>
+        </p>
         <p class="lede">
-          The old site had a fake terminal. This one reads the real site: its file system is built
-          from every project and post here.
+          A real shell over the real site: its file system is every project and post here.
         </p>
         <ul class="hints mono">
           <li>
@@ -121,10 +172,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
       </div>
     </div>
   </section>
-
+  <script type="application/json" id="terminal-data" set:html={JSON.stringify(termData)} />
   <section class="section" aria-labelledby="work">
     <SectionHead
-      idx="02"
+      idx="01"
       title="Selected work"
       id="work"
       meta={`${pad(projects.length)} PROJECTS`}
@@ -143,7 +194,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
   <section class="section" aria-labelledby="experience">
     <SectionHead
-      idx="03"
+      idx="02"
       title="Experience"
       id="experience"
       meta={`${String(jobs.length).padStart(2, '0')} ROLES · SINCE ${jobs.at(-1)?.data.start.slice(0, 4) ?? ''}`}
@@ -155,7 +206,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   </section>
 
   <section class="section" aria-labelledby="writing">
-    <SectionHead idx="04" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
+    <SectionHead idx="03" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
     <PostList posts={posts.slice(0, 5)} />
     {posts.length > 5 && (
       <a class="btn ghost" href="/blog">
@@ -165,7 +216,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   </section>
 
   <section class="section" aria-labelledby="about">
-    <SectionHead idx="05" title="About" id="about" meta="ID // OPERATOR" />
+    <SectionHead idx="04" title="About" id="about" meta="ID // OPERATOR" />
     <div class="about">
       <Portrait />
       <div class="about-copy">
@@ -226,6 +277,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 </Base>
 
 <script>
+  import '~/hero/controller';
+
   const el = document.querySelector<HTMLElement>('[data-clock]');
   if (el) {
     const tick = () => (el.textContent = `UTC ${new Date().toISOString().slice(11, 19)}`);
@@ -235,18 +288,157 @@ const pad = (n: number) => String(n).padStart(2, '0');
 </script>
 
 <style>
+  /* ---------- hero: shared ---------- */
   .hero {
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid var(--line);
+  }
+  /* the hero sits outside the centred column; the flat layout re-centres */
+  .stage,
+  .flat-term {
+    max-width: var(--max);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .intro {
     position: relative;
     padding-block: 56px 48px;
     display: grid;
     gap: 28px;
-    border-bottom: 1px solid var(--line);
   }
-  .hero > :global(*) {
+  .intro > :global(*) {
     position: relative;
   }
-  .hero > :global(canvas) {
+  .intro > :global(canvas) {
     position: absolute;
+  }
+  .gl,
+  .hint,
+  .hero-input,
+  .hero-log {
+    display: none;
+  }
+
+  /* ---------- hero: 3D (html[data-hero='3d']) ---------- */
+  :global(html[data-hero='3d']) .hero {
+    height: 380svh;
+    border-bottom: 0;
+  }
+  :global(html[data-hero='3d']) .stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+    max-width: none;
+    padding-inline: 0;
+    background: var(--void);
+  }
+  :global(html[data-hero='3d']) .gl {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.6s steps(6);
+  }
+  :global(html[data-hero='3d']) .hero[data-ready] .gl {
+    opacity: 1;
+  }
+  :global(html[data-hero='3d']) .intro {
+    position: absolute;
+    inset: 0;
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: calc(var(--bar-h) + 40px) var(--gutter) 88px;
+    align-content: end;
+    pointer-events: none;
+    opacity: clamp(0, calc(1 - var(--p, 0) * 5), 1);
+    transform: translateY(calc(var(--p, 0) * -160px));
+  }
+  :global(html[data-hero='3d']) .intro :global(a) {
+    pointer-events: auto;
+  }
+  :global(html[data-hero='3d']) .intro > :global(canvas) {
+    display: none; /* the Game of Life belongs to the flat hero */
+  }
+  :global(html[data-hero='3d']) .intro h1 {
+    font-size: clamp(3rem, 9vw, 8.5rem);
+    max-width: 11ch;
+  }
+  :global(html[data-hero='3d']) .hero-foot {
+    max-width: 44rem;
+  }
+  @media (orientation: portrait) {
+    :global(html[data-hero='3d']) .intro {
+      align-content: start;
+    }
+    :global(html[data-hero='3d']) .hero-foot {
+      display: none; /* the computer sits in the lower half on phones */
+    }
+  }
+  :global(html[data-hero='3d']) .hint {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 22px;
+    max-width: none;
+    text-align: center;
+    color: var(--dim);
+    pointer-events: none;
+  }
+  .h-hold {
+    display: none;
+  }
+  :global(html[data-hero='3d']) .hero[data-hold] .h-intro {
+    display: none;
+  }
+  :global(html[data-hero='3d']) .hero[data-hold] .h-hold.h-fine {
+    display: inline;
+  }
+  @media (pointer: coarse) {
+    :global(html[data-hero='3d']) .hero[data-hold] .h-hold.h-fine {
+      display: none;
+    }
+    :global(html[data-hero='3d']) .hero[data-hold] .h-hold.h-coarse {
+      display: inline;
+    }
+  }
+  .h-intro {
+    opacity: clamp(0, calc(1 - var(--p, 0) * 8), 1);
+  }
+  :global(html[data-hero='3d']) .hero-input {
+    display: block;
+    position: absolute;
+    z-index: 3;
+    opacity: 0;
+    font-size: 16px; /* no iOS zoom on focus */
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: transparent;
+    caret-color: transparent;
+    cursor: text;
+    pointer-events: none;
+  }
+  :global(html[data-hero='3d']) .hero[data-hold] .hero-input {
+    pointer-events: auto;
+  }
+  :global(html[data-hero='3d']) .hero-log {
+    display: block;
+  }
+  .anchor {
+    display: block; /* flat: sits just above the terminal */
+  }
+  :global(html[data-hero='3d']) .anchor {
+    position: absolute;
+    /* scrolling here lands mid-hold: the screen fills the view */
+    top: calc((100% - 100svh) * 0.5);
+  }
+  :global(html[data-hero='3d']) .flat-term {
+    display: none; /* hidden, so its React island never hydrates */
   }
   .hero-meta {
     display: flex;
@@ -321,14 +513,16 @@ const pad = (n: number) => String(n).padStart(2, '0');
     flex-wrap: wrap;
   }
 
-  .term-grid {
+  /* ---------- hero: flat fallback ---------- */
+  .flat-term {
     display: grid;
     gap: 24px;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     align-items: stretch;
+    padding-block: 8px 56px;
   }
   @media (max-width: 860px) {
-    .term-grid {
+    .flat-term {
       grid-template-columns: 1fr;
     }
   }

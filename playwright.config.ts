@@ -12,6 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
+    // WebGL on GPU-less CI runners, for the 3D hero
+    launchOptions: { args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
