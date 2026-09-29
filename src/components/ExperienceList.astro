@@ -1,0 +1,167 @@
+---
+import { render } from 'astro:content';
+import { dateRange, type Job } from '~/lib/content';
+
+/**
+ * Jobs as labeled rows (style bible list: code, then content). `full` renders
+ * each job's Markdown body and stack; the home page shows the summary only.
+ */
+interface Props {
+  jobs: Job[];
+  full?: boolean;
+}
+const { jobs, full = false } = Astro.props;
+const rendered = await Promise.all(
+  jobs.map(async (job) => ({ job, ...(full ? await render(job) : {}) })),
+);
+---
+
+<ol class="jobs">
+  {rendered.map(({ job, Content }, i) => {
+    const { role, org, orgNote, location, start, end, summary, stack, metrics } = job.data;
+    return (
+      <li class:list={['job', { current: end === 'present' }]}>
+        <div class="code mono">
+          <span class="n">{`E.${String(jobs.length - i).padStart(2, '0')}`}</span>
+          <span class="dates">{dateRange(start, end)}</span>
+        </div>
+        <div class="body">
+          <h3>{role}</h3>
+          <p class="org mono">
+            <span class="sig">{org}</span>
+            {orgNote && <span class="dim"> ({orgNote})</span>}
+            <span class="dim"> · {location}</span>
+          </p>
+          <p class="summary">{summary}</p>
+          {metrics.length > 0 && (
+            <div class="metrics">
+              {metrics.map((m) => (
+                <div class="stat">
+                  <span class="v">
+                    {m.value}
+                    {m.unit && <small>{m.unit}</small>}
+                  </span>
+                  <span class="mono dim">{m.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {Content && (
+            <div class="detail">
+              <Content />
+            </div>
+          )}
+          {full && stack.length > 0 && (
+            <ul class="chips" aria-label="Stack">
+              {stack.map((s) => (
+                <li>{s}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </li>
+    );
+  })}
+</ol>
+
+<style>
+  .jobs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .job {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+    gap: 12px 32px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 640px) {
+    .job {
+      grid-template-columns: 1fr;
+    }
+  }
+  .code {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding-top: 6px;
+  }
+  .n {
+    color: var(--signal);
+  }
+  .dates {
+    color: var(--dim);
+  }
+  .current .dates {
+    color: var(--bone);
+  }
+  .body {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  h3 {
+    font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+    font-weight: 850;
+    font-variation-settings: 'wdth' 130;
+    overflow-wrap: anywhere;
+  }
+  .org {
+    letter-spacing: 0.06em;
+  }
+  .summary {
+    color: var(--bone-2);
+  }
+  .metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 40px;
+    padding-block: 8px;
+  }
+  .metrics .stat {
+    max-width: 16rem;
+  }
+  .metrics .v {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+  }
+  .detail {
+    display: grid;
+    gap: 10px;
+    font-size: var(--s-sm);
+    color: var(--bone-2);
+    max-width: 72ch;
+  }
+  .detail :global(h3) {
+    font-family: var(--f-mono);
+    font-size: var(--s-xs);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--signal);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .detail :global(h3)::before {
+    content: '// ';
+  }
+  .detail :global(ul) {
+    margin: 0;
+    padding-left: 1.1em;
+    display: grid;
+    gap: 6px;
+  }
+  .detail :global(li) {
+    display: list-item;
+    padding: 0;
+    border: 0;
+  }
+  .detail :global(li::marker) {
+    color: var(--signal);
+  }
+  .detail :global(p) {
+    margin: 0;
+  }
+</style>

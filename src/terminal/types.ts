@@ -34,6 +34,21 @@ export interface SiteLink {
   readonly href: string;
 }
 
+export interface SiteJob {
+  readonly role: string;
+  readonly org: string;
+  readonly location: string;
+  /** Display range, e.g. "OCT 2023 – PRESENT". */
+  readonly dates: string;
+  readonly summary: string;
+}
+
+export interface SiteEducation {
+  readonly degree: string;
+  readonly school: string;
+  readonly dates: string;
+}
+
 export interface SiteData {
   readonly name: string;
   readonly handle: string;
@@ -43,6 +58,9 @@ export interface SiteData {
   readonly links: readonly SiteLink[];
   readonly projects: readonly SiteEntry[];
   readonly posts: readonly SiteEntry[];
+  readonly experience: readonly SiteJob[];
+  readonly education: readonly SiteEducation[];
+  readonly skills: readonly { readonly group: string; readonly items: readonly string[] }[];
   readonly build: { readonly version: string; readonly commit: string; readonly date: string };
 }
 

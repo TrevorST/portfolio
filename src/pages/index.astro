@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '~/layouts/Base.astro';
 import Tag from '~/components/Tag.astro';
 import SectionHead from '~/components/SectionHead.astro';
@@ -8,12 +7,20 @@ import LifeCanvas from '~/components/LifeCanvas.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
 import PostList from '~/components/PostList.astro';
 import Terminal from '~/components/terminal/Terminal.tsx';
-import portrait from '~/assets/trevor.webp';
-import { getPosts, getProjects, terminalData } from '~/lib/content';
+import Portrait from '~/components/Portrait.astro';
+import ExperienceList from '~/components/ExperienceList.astro';
+import { dateRange, getExperience, getPosts, getProjects, terminalData } from '~/lib/content';
 import { build, site } from '~/site.config';
 import { commands } from '~/terminal/registry';
 
-const [projects, posts, termData] = await Promise.all([getProjects(), getPosts(), terminalData()]);
+const [projects, posts, jobs, termData] = await Promise.all([
+  getProjects(),
+  getPosts(),
+  getExperience(),
+  terminalData(),
+]);
+const current = jobs.find((j) => j.data.end === 'present');
+const languages = site.skills.find((s) => s.group === 'Languages')?.items ?? [];
 const HOME_CARDS = 6;
 const selected = projects.slice(0, HOME_CARDS);
 const activeCount = projects.filter(
@@ -45,10 +52,18 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </h1>
     <div class="hero-foot">
       <p class="lede">
-        Software engineer. I make tools for making things, and the automated pipelines that test and
-        ship them.
+        Software engineer at Toyota. I build the platform other teams ship on: CI/CD, database
+        migrations, zero-downtime schema checks. ~60 days to production, now under 3 hours.
       </p>
       <dl class="kv">
+        {current && (
+          <>
+            <dt>Now</dt>
+            <dd>
+              {current.data.role} · {current.data.org}
+            </dd>
+          </>
+        )}
         <dt>Projects</dt>
         <dd>{pad(projects.length)} on file</dd>
         <dt>Active</dt>
@@ -125,8 +140,21 @@ const pad = (n: number) => String(n).padStart(2, '0');
     )}
   </section>
 
+  <section class="section" aria-labelledby="experience">
+    <SectionHead
+      idx="03"
+      title="Experience"
+      id="experience"
+      meta={`${String(jobs.length).padStart(2, '0')} ROLES · SINCE ${jobs.at(-1)?.data.start.slice(0, 4) ?? ''}`}
+    />
+    <ExperienceList jobs={jobs} />
+    <a class="btn ghost" href="/about">
+      Full resume ▸
+    </a>
+  </section>
+
   <section class="section" aria-labelledby="writing">
-    <SectionHead idx="03" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
+    <SectionHead idx="04" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
     <PostList posts={posts.slice(0, 5)} />
     {posts.length > 5 && (
       <a class="btn ghost" href="/blog">
@@ -136,28 +164,26 @@ const pad = (n: number) => String(n).padStart(2, '0');
   </section>
 
   <section class="section" aria-labelledby="about">
-    <SectionHead idx="04" title="About" id="about" meta="ID // OPERATOR" />
+    <SectionHead idx="05" title="About" id="about" meta="ID // OPERATOR" />
     <div class="about">
-      <figure class="portrait">
-        <Image
-          src={portrait}
-          alt="Trevor Taylor"
-          widths={[320, 480, 640]}
-          sizes="(min-width: 800px) 320px, 70vw"
-        />
-        <div class="dither" aria-hidden="true"></div>
-        <figcaption class="mono dim">OPERATOR · {site.name.toUpperCase()}</figcaption>
-      </figure>
+      <Portrait />
       <div class="about-copy">
         <p class="lede">{site.bio}</p>
         <dl class="kv">
-          <dt>Education</dt>
-          <dd>B.S. Computer Science, East Tennessee State University</dd>
-          <dt>Builds</dt>
-          <dd>Editors, generators, simulations, agent pipelines</dd>
-          <dt>Speaks</dt>
-          <dd>TypeScript, React, Python, C#, Java, C++, SQL</dd>
+          {site.education.map((e) => (
+            <>
+              <dt>Education</dt>
+              <dd>
+                {e.degree}, {e.school} · {dateRange(e.start, e.end)}
+              </dd>
+            </>
+          ))}
+          <dt>Languages</dt>
+          <dd>{languages.join(', ')}</dd>
         </dl>
+        <a class="btn ghost" href="/about">
+          Experience, education and skills ▸
+        </a>
       </div>
     </div>
   </section>
@@ -324,37 +350,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
     .about {
       grid-template-columns: 1fr;
     }
-    .portrait {
+    .about :global(.portrait) {
       max-width: 280px;
     }
-  }
-  .portrait {
-    position: relative;
-    margin: 0;
-    border: 1px solid var(--line);
-    background: var(--carbon);
-  }
-  .portrait :global(img) {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    filter: grayscale(1) contrast(1.2) brightness(0.85);
-  }
-  .portrait .dither {
-    position: absolute;
-    inset: 0 0 auto;
-    aspect-ratio: 1;
-    background: var(--signal);
-    mix-blend-mode: multiply;
-    mask: url('/dither.svg') repeat;
-    -webkit-mask: url('/dither.svg') repeat;
-    mask-size: 4px 4px;
-    -webkit-mask-size: 4px 4px;
-    opacity: 0.9;
-  }
-  .portrait figcaption {
-    padding: 8px 10px;
-    border-top: 1px solid var(--line);
   }
   .about-copy {
     display: grid;

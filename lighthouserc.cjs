@@ -8,6 +8,7 @@ module.exports = {
       staticDistDir: './dist',
       url: [
         '/index.html',
+        '/about.html',
         '/projects.html',
         '/projects/circleflow.html',
         '/blog/rebuilding-this-site.html',

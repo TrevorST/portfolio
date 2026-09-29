@@ -1,3 +1,4 @@
+import { resumeLines } from './resume-text';
 import type { SiteData, SiteEntry } from './types';
 
 export interface FileNode {
@@ -49,7 +50,8 @@ export function buildTree(data: SiteData): DirNode {
     ...data.links.map((l) => `${l.label.toLowerCase()}: ${l.href}`),
   ].join('\n');
   const home = dir({
-    'about.txt': file(about, '/#about'),
+    'about.txt': file(about, '/about'),
+    'resume.txt': file(resumeLines(data).join('\n'), '/about'),
     'contact.txt': file(contact, '/#contact'),
     projects: entriesDir(data.projects),
     posts: entriesDir(data.posts),

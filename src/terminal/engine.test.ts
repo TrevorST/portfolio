@@ -28,6 +28,17 @@ const data: SiteData = {
     },
   ],
   posts: [{ slug: 'hello', title: 'Hello', summary: 'First post.', url: '/blog/hello', tags: [] }],
+  experience: [
+    {
+      role: 'Software Developer',
+      org: 'Acme',
+      location: 'Dallas, TX',
+      dates: 'OCT 2023 – PRESENT',
+      summary: 'Builds platforms.',
+    },
+  ],
+  education: [{ degree: 'B.S. Computer Science', school: 'ETSU', dates: 'AUG 2018 – AUG 2023' }],
+  skills: [{ group: 'Languages', items: ['Java', 'C#'] }],
   build: { version: '0.1.0', commit: 'abc1234', date: '2026-09-29' },
 };
 
@@ -154,5 +165,29 @@ describe('TerminalEngine', () => {
     const { term } = setup();
     await term.execute('fib 90');
     expect(term.getSnapshot().lines.at(-1)?.text.endsWith('1779979416004714189')).toBe(true);
+  });
+
+  it('resume and resume.txt read the same experience, education and skills', async () => {
+    const { term, text } = setup();
+    await term.execute('resume');
+    const fromCommand = text();
+    for (const expected of [
+      'Software Developer',
+      'Acme · Dallas, TX',
+      'B.S. Computer Science',
+      'Java, C#',
+    ]) {
+      expect(fromCommand).toContain(expected);
+    }
+    expect(term.getSnapshot().lines.at(-1)).toMatchObject({ href: '/about' });
+    term.clear();
+    await term.execute('cat resume.txt');
+    expect(text()).toContain('OCT 2023 – PRESENT');
+  });
+
+  it('whoami leads with the current role', async () => {
+    const { term, text } = setup();
+    await term.execute('whoami');
+    expect(text()).toContain('Software Developer · Acme');
   });
 });

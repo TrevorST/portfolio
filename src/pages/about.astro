@@ -1,0 +1,160 @@
+---
+import Base from '~/layouts/Base.astro';
+import Frame from '~/components/Frame.astro';
+import Tag from '~/components/Tag.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import Portrait from '~/components/Portrait.astro';
+import ExperienceList from '~/components/ExperienceList.astro';
+import { dateRange, getExperience } from '~/lib/content';
+import { site } from '~/site.config';
+
+const jobs = await getExperience();
+const current = jobs.find((j) => j.data.end === 'present');
+const subline = [site.role, current?.data.org, current?.data.location].filter(Boolean).join(' · ');
+---
+
+<Base title="About" description={site.bio}>
+  <div class="about-page">
+    <Frame corners="tri">
+      <Tag label="ID // Operator" />
+      <h1>{site.name}.</h1>
+      <p class="sub">*{subline}</p>
+    </Frame>
+
+    <div class="intro">
+      <Portrait eager />
+      <div class="intro-copy">
+        <p class="lede">{site.bio}</p>
+        <div class="cta">
+          <a class="btn" href="/#contact">
+            Get in touch ▸
+          </a>
+          <a class="btn ghost" href="/projects">
+            See the work
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" aria-labelledby="experience">
+      <SectionHead
+        idx="01"
+        title="Experience"
+        id="experience"
+        meta={`${String(jobs.length).padStart(2, '0')} ROLES`}
+      />
+      <ExperienceList jobs={jobs} full />
+    </section>
+
+    <section class="section" aria-labelledby="education">
+      <SectionHead idx="02" title="Education" id="education" meta="DEGREE" />
+      <ul class="edu">
+        {site.education.map((e) => (
+          <li class="panel">
+            <span class="mono dim">{dateRange(e.start, e.end)}</span>
+            <h3>{e.degree}</h3>
+            <p class="mono">
+              <span class="sig">{e.school}</span>
+              <span class="dim"> · {e.location}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="skills">
+      <SectionHead
+        idx="03"
+        title="Skills"
+        id="skills"
+        meta={`${site.skills.reduce((n, s) => n + s.items.length, 0)} ON FILE`}
+      />
+      <dl class="skills">
+        {site.skills.map((s) => (
+          <div class="row">
+            <dt class="mono">{s.group}</dt>
+            <dd>
+              <ul class="chips">
+                {s.items.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .about-page {
+    display: grid;
+    gap: 40px;
+    padding-top: 48px;
+  }
+  .intro {
+    display: grid;
+    gap: 32px;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .intro {
+      grid-template-columns: 1fr;
+    }
+    .intro :global(.portrait) {
+      max-width: 280px;
+    }
+  }
+  .intro-copy {
+    display: grid;
+    gap: 24px;
+  }
+  .cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .edu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 16px;
+  }
+  .edu h3 {
+    font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+    font-weight: 850;
+    font-variation-settings: 'wdth' 130;
+  }
+  .skills {
+    margin: 0;
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+    gap: 12px 32px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 640px) {
+    .row {
+      grid-template-columns: 1fr;
+    }
+  }
+  .row dt {
+    color: var(--signal);
+    padding-top: 3px;
+  }
+  .row dd {
+    margin: 0;
+  }
+  .row .chips > * {
+    font-size: var(--s-xs);
+    color: var(--bone);
+    padding: 5px 9px;
+  }
+</style>
