@@ -1,0 +1,28 @@
+# build output
+dist/
+.astro/
+.vercel/
+
+# dependencies
+node_modules/
+
+# test and audit output
+coverage/
+playwright-report/
+test-results/
+.lighthouseci/
+
+# env
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# the pre-2026 site, kept locally for reference only
+oldwebsitecopy/
