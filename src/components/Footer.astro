@@ -1,5 +1,6 @@
 ---
 import { build, site } from '~/site.config';
+import { trackAttrs } from '~/lib/analytics';
 
 const repo = 'https://github.com/TrevorST/portfolio';
 const commitHref = build.commit === 'dev' ? repo : `${repo}/commit/${build.commit}`;
@@ -16,7 +17,11 @@ const commitHref = build.commit === 'dev' ? repo : `${repo}/commit/${build.commi
       {site.links.map((l, i) => (
         <>
           {i > 0 && ' · '}
-          <a href={l.href} rel="me">
+          <a
+            href={l.href}
+            rel="me"
+            {...trackAttrs('contact-click', { channel: l.label.toLowerCase(), from: 'footer' })}
+          >
             {l.label}
           </a>
         </>

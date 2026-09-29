@@ -12,6 +12,7 @@ import ExperienceList from '~/components/ExperienceList.astro';
 import { dateRange, getExperience, getPosts, getProjects, terminalData } from '~/lib/content';
 import { build, site } from '~/site.config';
 import { commands } from '~/terminal/registry';
+import { trackAttrs } from '~/lib/analytics';
 
 const [projects, posts, jobs, termData] = await Promise.all([
   getProjects(),
@@ -193,14 +194,29 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <Tag label="Contact" class="flood-tag" decode={false} />
       <h2 id="contact">Let's talk.</h2>
       <p class="sub">
-        *Email is fastest: <a href={`mailto:${site.email}`}>{site.email}</a>
+        *Email is fastest:{' '}
+        <a
+          href={`mailto:${site.email}`}
+          {...trackAttrs('contact-click', { channel: 'email', from: 'home' })}
+        >
+          {site.email}
+        </a>
       </p>
       <div class="cta">
-        <a class="btn dark" href={`mailto:${site.email}`}>
+        <a
+          class="btn dark"
+          href={`mailto:${site.email}`}
+          {...trackAttrs('contact-click', { channel: 'email', from: 'home' })}
+        >
           Email me ▸
         </a>
         {site.links.map((l) => (
-          <a class="btn dark ghost" href={l.href} rel="me">
+          <a
+            class="btn dark ghost"
+            href={l.href}
+            rel="me"
+            {...trackAttrs('contact-click', { channel: l.label.toLowerCase(), from: 'home' })}
+          >
             {l.label}
           </a>
         ))}

@@ -56,7 +56,7 @@ export function buildTree(data: SiteData): DirNode {
     projects: entriesDir(data.projects),
     posts: entriesDir(data.posts),
     '.plan': file(
-      'v0.2: a 3D computer you are standing in front of.\nv0.3: live demos.\nv1.0: launch.',
+      'v0.2: a 3D computer you are standing in front of.\nv0.3: live demos.\nv0.4: polish, posts, secrets.\nv1.0: launch.',
     ),
   });
   return dir({ home: dir({ trevor: home }) });

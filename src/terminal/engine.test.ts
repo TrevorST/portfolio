@@ -220,6 +220,41 @@ describe('TerminalEngine', () => {
     expect(text()).toContain('OCT 2023 – PRESENT');
   });
 
+  it('reports command names to the host, never arguments or raw input', async () => {
+    const onCommand = vi.fn();
+    const host: TerminalHost = {
+      navigate: vi.fn(),
+      sleep: () => Promise.resolve(),
+      now: () => new Date(),
+      onCommand,
+    };
+    const term = new TerminalEngine({ data, commands, host });
+    await term.execute('cat secret-thing.txt');
+    await term.execute('dir projects');
+    await term.execute('sudo rm -rf /');
+    await term.execute('my email is me@example.com');
+    expect(onCommand.mock.calls).toEqual([
+      ['cat', { hidden: false }],
+      ['ls', { hidden: false }], // aliases report the canonical name
+      ['sudo', { hidden: true }],
+      ['unknown', { hidden: false }],
+    ]);
+  });
+
+  it('keeps working when the host observer throws', async () => {
+    const host: TerminalHost = {
+      navigate: vi.fn(),
+      sleep: () => Promise.resolve(),
+      now: () => new Date(),
+      onCommand: () => {
+        throw new Error('tracker blocked');
+      },
+    };
+    const term = new TerminalEngine({ data, commands, host });
+    await term.execute('pwd');
+    expect(term.getSnapshot().lines.at(-1)?.text).toBe('/home/trevor');
+  });
+
   it('whoami leads with the current role', async () => {
     const { term, text } = setup();
     await term.execute('whoami');
