@@ -84,7 +84,7 @@ export const site = {
  * through /stats (see vercel.json) so it is first-party.
  */
 export const analytics = {
-  websiteId: '',
+  websiteId: 'cce5732d-0f50-4ec3-a36b-22150d45f1c0',
   /** Umami Cloud. Must match the rewrite destinations in vercel.json. */
   host: 'https://cloud.umami.is',
 };
