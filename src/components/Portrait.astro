@@ -1,0 +1,53 @@
+---
+import { Image } from 'astro:assets';
+import portrait from '~/assets/trevor.webp';
+import { site } from '~/site.config';
+
+interface Props {
+  eager?: boolean;
+}
+const { eager = false } = Astro.props;
+---
+
+<figure class="portrait">
+  <Image
+    src={portrait}
+    alt={site.name}
+    widths={[320, 480, 640]}
+    sizes="(min-width: 800px) 320px, 70vw"
+    loading={eager ? 'eager' : 'lazy'}
+  />
+  <div class="dither" aria-hidden="true"></div>
+  <figcaption class="mono dim">OPERATOR · {site.name.toUpperCase()}</figcaption>
+</figure>
+
+<style>
+  .portrait {
+    position: relative;
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--carbon);
+  }
+  .portrait :global(img) {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.2) brightness(0.85);
+  }
+  .dither {
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 1;
+    background: var(--signal);
+    mix-blend-mode: multiply;
+    mask: url('/dither.svg') repeat;
+    -webkit-mask: url('/dither.svg') repeat;
+    mask-size: 4px 4px;
+    -webkit-mask-size: 4px 4px;
+    opacity: 0.9;
+  }
+  figcaption {
+    padding: 8px 10px;
+    border-top: 1px solid var(--line);
+  }
+</style>

@@ -53,4 +53,28 @@ const posts = defineCollection({
   }),
 });
 
-export const collections = { projects, posts };
+const month = z.string().regex(/^\d{4}-\d{2}$/, 'use YYYY-MM');
+
+/** Jobs and research roles. The body holds the bullets, grouped under ### headings. */
+const experience = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/experience' }),
+  schema: z.object({
+    role: z.string(),
+    org: z.string(),
+    /** e.g. "Acquired by Keandrews". */
+    orgNote: z.string().optional(),
+    location: z.string(),
+    start: month,
+    /** YYYY-MM, or "present" for the current role. */
+    end: z.union([month, z.literal('present')]),
+    /** One line for the terminal and the page's meta. */
+    summary: z.string().max(240),
+    stack: z.array(z.string()).default([]),
+    /** Real, sourced numbers only (design principle P.07). */
+    metrics: z
+      .array(z.object({ value: z.string(), unit: z.string().optional(), label: z.string() }))
+      .default([]),
+  }),
+});
+
+export const collections = { projects, posts, experience };

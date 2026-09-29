@@ -1,6 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PAGES = ['/', '/projects', '/projects/circleflow', '/blog', '/blog/rebuilding-this-site'];
+const PAGES = [
+  '/',
+  '/about',
+  '/projects',
+  '/projects/circleflow',
+  '/projects/xv6-doom',
+  '/blog',
+  '/blog/rebuilding-this-site',
+];
 
 /** Fail the test on any console error or uncaught exception. */
 function watchErrors(page: Page): string[] {
