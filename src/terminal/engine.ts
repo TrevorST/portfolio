@@ -54,6 +54,9 @@ export class TerminalEngine {
   private nextId = 1;
   private cwd = HOME;
   private busy = false;
+  private bootQueued = false;
+  private pending = 0;
+  private tail: Promise<void> = Promise.resolve();
   private booted = false;
   private history: string[] = [];
   private historyCursor = 0;
@@ -129,10 +132,13 @@ export class TerminalEngine {
   // ---- boot ----
 
   /** Play the power-on log. `fast` skips the delays (reduced motion, revisits). */
-  async boot({ fast = false }: { fast?: boolean } = {}): Promise<void> {
-    if (this.booted || this.busy) return;
-    this.busy = true;
-    this.emit();
+  boot({ fast = false }: { fast?: boolean } = {}): Promise<void> {
+    if (this.bootQueued) return this.tail;
+    this.bootQueued = true;
+    return this.enqueue(() => this.runBoot(fast));
+  }
+
+  private async runBoot(fast: boolean): Promise<void> {
     const wait = (ms: number) => (fast ? Promise.resolve() : this.host.sleep(ms));
     const { build, projects, posts } = this.data;
     const steps: [string, LineKind, number][] = [
@@ -148,9 +154,26 @@ export class TerminalEngine {
       this.print(text, kind);
       await wait(ms);
     }
-    this.busy = false;
     this.booted = true;
+  }
+
+  /**
+   * Boot and commands run strictly one after another. Input typed while
+   * something is still running (boot, a slow command) waits its turn instead
+   * of being dropped.
+   */
+  private enqueue(task: () => Promise<void>): Promise<void> {
+    this.pending += 1;
+    this.busy = true;
     this.emit();
+    const run = this.tail.then(task).finally(() => {
+      this.pending -= 1;
+      this.busy = this.pending > 0;
+      this.emit();
+    });
+    // a failed task must not stall the queue
+    this.tail = run.catch(() => {});
+    return run;
   }
 
   // ---- history ----
@@ -173,23 +196,19 @@ export class TerminalEngine {
 
   // ---- execution ----
 
-  async execute(raw: string): Promise<void> {
+  execute(raw: string): Promise<void> {
     const line = raw.trim();
-    this.print(`${this.snapshot.prompt} ${raw}`, 'input');
-    if (!line) return;
-    if (this.history.at(-1) !== line) this.history.push(line);
-    if (this.history.length > MAX_HISTORY) this.history.shift();
-    this.historyCursor = this.history.length;
-    this.draft = '';
-
-    this.busy = true;
-    this.emit();
-    try {
-      await this.dispatch(line);
-    } finally {
-      this.busy = false;
-      this.emit();
+    if (line) {
+      // history updates immediately so Up works even while this is queued
+      if (this.history.at(-1) !== line) this.history.push(line);
+      if (this.history.length > MAX_HISTORY) this.history.shift();
+      this.historyCursor = this.history.length;
+      this.draft = '';
     }
+    return this.enqueue(async () => {
+      this.print(`${this.snapshot.prompt} ${raw}`, 'input');
+      if (line) await this.dispatch(line);
+    });
   }
 
   private async dispatch(line: string): Promise<void> {
