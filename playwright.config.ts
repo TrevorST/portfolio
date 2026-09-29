@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   // One worker on CI: the 3D tests render WebGL in software (SwiftShader) and
   // starve a parallel worker's timers on the 2-core runner.
-  workers: process.env.CI ? 1 : undefined,
+  ...(process.env.CI ? { workers: 1 } : {}),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
