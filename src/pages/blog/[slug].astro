@@ -1,0 +1,88 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import Base from '~/layouts/Base.astro';
+import Frame from '~/components/Frame.astro';
+import Tag from '~/components/Tag.astro';
+import { getPosts, isoDate, type Post } from '~/lib/content';
+import '~/styles/prose.css';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { title, summary, date, updated, tags } = post.data;
+const { Content } = await render(post);
+const minutes = Math.max(1, Math.round(((post.body ?? '').split(/\s+/).length || 0) / 230));
+---
+
+<Base title={title} description={summary} type="article">
+  <article class="post">
+    <Frame corners="tri">
+      <Tag label={`Writing // ${isoDate(date)}`} />
+      <h1>{title}</h1>
+      <p class="sub">{summary}</p>
+    </Frame>
+    <dl class="kv">
+      <dt>Published</dt>
+      <dd>
+        <time datetime={date.toISOString()}>{isoDate(date)}</time>
+      </dd>
+      {updated && (
+        <>
+          <dt>Updated</dt>
+          <dd>
+            <time datetime={updated.toISOString()}>{isoDate(updated)}</time>
+          </dd>
+        </>
+      )}
+      <dt>Read</dt>
+      <dd>{minutes} min</dd>
+      {tags.length > 0 && (
+        <>
+          <dt>Tags</dt>
+          <dd>{tags.join(' / ')}</dd>
+        </>
+      )}
+    </dl>
+    <div class="prose">
+      <Content />
+    </div>
+    <nav class="mono back">
+      <a href="/blog">◂ All writing</a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .post {
+    display: grid;
+    gap: 36px;
+    padding-top: 48px;
+  }
+  .post :global(.frame h1) {
+    font-size: clamp(2.4rem, 7vw, 5.5rem);
+  }
+  .kv {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    width: fit-content;
+  }
+  .back {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+  }
+  .back a {
+    color: var(--dim);
+    text-decoration: none;
+  }
+  .back a:hover {
+    color: var(--signal);
+  }
+</style>

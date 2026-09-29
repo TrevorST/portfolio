@@ -1,0 +1,14 @@
+---
+/** The signature // LABEL // with down-triangles (style bible W.01). */
+interface Props {
+  label: string;
+  as?: 'span' | 'p' | 'div';
+  class?: string;
+  decode?: boolean;
+}
+const { label, as: El = 'span', class: className, decode = true } = Astro.props;
+---
+
+<El class:list={['tag', className]}>
+  <span data-decode={decode ? '' : undefined}>{label}</span>
+</El>

@@ -1,0 +1,53 @@
+---
+/** Numbered section header: index, huge wide title, mono data point on the right. */
+interface Props {
+  idx: string;
+  title: string;
+  meta?: string;
+  id?: string;
+  level?: 1 | 2;
+}
+const { idx, title, meta, id, level = 2 } = Astro.props;
+const H = level === 1 ? 'h1' : 'h2';
+---
+
+<div class="sec-head">
+  <span class="idx">{idx}</span>
+  <H id={id} data-decode>
+    {title}
+  </H>
+  {meta && <span class="mono dim meta">{meta}</span>}
+</div>
+
+<style>
+  .sec-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: end;
+    border-bottom: 1px solid var(--bone);
+    padding-bottom: 12px;
+  }
+  .idx {
+    font-family: var(--f-mono);
+    font-size: var(--s-sm);
+    color: var(--signal);
+  }
+  h1,
+  h2 {
+    font-size: var(--s-2xl);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 125;
+    letter-spacing: -0.01em;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 560px) {
+    .sec-head {
+      grid-template-columns: auto 1fr;
+    }
+    .meta {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

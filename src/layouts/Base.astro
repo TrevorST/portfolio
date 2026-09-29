@@ -1,0 +1,115 @@
+---
+import '~/styles/global.css';
+import Fonts from '~/components/Fonts.astro';
+import TopBar from '~/components/TopBar.astro';
+import Footer from '~/components/Footer.astro';
+import { site } from '~/site.config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  type?: 'website' | 'article';
+}
+const { title, description = site.description, type = 'website' } = Astro.props;
+const fullTitle = title ? `${title} // ${site.name}` : `${site.name} // Software engineer`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#07080A" />
+    <Fonts />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${site.name} // Writing`}
+      href="/rss.xml"
+    />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={site.name} />
+    <meta name="twitter:card" content="summary" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <TopBar />
+    <main id="main" class="wrap">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      /*
+       * Text decode (style bible P.06): headings and labels marked [data-decode]
+       * resolve from random glyphs in stepped frames, once when they scroll into
+       * view and again on hover. Only an aria-hidden copy scrambles; screen readers
+       * read a stable sr-only copy. Never used on paragraphs.
+       */
+      const GLYPHS = '!<>-_\\/[]{}=+*^?#01ABCDEFXZ';
+      const FRAMES = 16;
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function decode(el: HTMLElement) {
+        const final = el.dataset.final ?? '';
+        let frame = 0;
+        window.clearInterval(Number(el.dataset.timer));
+        const timer = window.setInterval(() => {
+          let out = '';
+          for (let i = 0; i < final.length; i++) {
+            const ch = final[i] ?? '';
+            out +=
+              /[\s/.,·]/.test(ch) || i < (frame / FRAMES) * final.length
+                ? ch
+                : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+          }
+          el.textContent = out;
+          if (++frame > FRAMES) {
+            window.clearInterval(timer);
+            el.textContent = final;
+          }
+        }, 40);
+        el.dataset.timer = String(timer);
+      }
+
+      if (!reduce) {
+        const seen = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            seen.unobserve(e.target);
+            decode(e.target as HTMLElement);
+          }
+        });
+        for (const el of document.querySelectorAll<HTMLElement>('[data-decode]')) {
+          // only plain-text elements; anything with markup inside is left alone
+          const text = el.textContent?.trim() ?? '';
+          if (el.children.length > 0 || !text) continue;
+
+          const visual = document.createElement('span');
+          visual.setAttribute('aria-hidden', 'true');
+          visual.dataset.final = text;
+          visual.textContent = text;
+          const spoken = document.createElement('span');
+          spoken.className = 'sr-only';
+          spoken.textContent = text;
+          el.replaceChildren(visual, spoken);
+          seen.observe(visual);
+          el.addEventListener('mouseenter', () => decode(visual));
+        }
+      }
+    </script>
+  </body>
+</html>

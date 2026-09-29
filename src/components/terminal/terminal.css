@@ -1,0 +1,157 @@
+/* The old site's pixel font survives here, and only here (design brief). */
+@font-face {
+  font-family: 'Pixeloid Sans';
+  src: url('../../assets/fonts/PixeloidSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+.term {
+  --phosphor: var(--signal);
+  --glass: #050606;
+  position: relative;
+  height: 100%;
+}
+
+.term-screen {
+  position: relative;
+  height: 100%;
+  min-height: 22rem;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: radial-gradient(ellipse at 50% 45%, #0b0f06 0%, var(--glass) 75%);
+  border: 1px solid var(--line);
+  padding: 18px 20px 14px;
+  font-family: 'Pixeloid Sans', var(--f-mono);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: var(--phosphor);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--phosphor) 45%, transparent);
+  cursor: text;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* scanlines + vignette: the glass */
+.term-screen::before,
+.term-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.term-screen::before {
+  background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px);
+}
+.term-screen::after {
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+  animation: term-flicker 6s steps(1) infinite;
+}
+@keyframes term-flicker {
+  0%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 0.82;
+  }
+  98% {
+    opacity: 1;
+  }
+  99% {
+    opacity: 0.9;
+  }
+}
+
+.term-out {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  min-height: 0;
+  padding-bottom: 4px;
+}
+
+.term-line {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.term-input.term-line,
+.term-line.term-input {
+  color: var(--bone);
+  text-shadow: none;
+}
+.term-output {
+  color: var(--phosphor);
+}
+.term-dim {
+  color: var(--dim);
+  text-shadow: none;
+}
+.term-system {
+  color: var(--bone);
+  text-shadow: none;
+}
+.term-accent {
+  color: var(--phosphor);
+  text-decoration: none;
+}
+a.term-line:hover,
+a.term-line:focus-visible {
+  background: var(--phosphor);
+  color: var(--void);
+  text-shadow: none;
+}
+.term-error {
+  color: var(--flare);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--flare) 45%, transparent);
+}
+
+.term-prompt {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  border-top: 1px dashed color-mix(in srgb, var(--phosphor) 25%, transparent);
+  padding-top: 8px;
+}
+.term-ps1 {
+  color: var(--dim);
+  text-shadow: none;
+  white-space: nowrap;
+  flex: none;
+}
+input.term-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  font: inherit;
+  /* 16px minimum stops iOS zooming the page when the keyboard opens */
+  font-size: max(16px, 1em);
+  color: var(--bone);
+  caret-color: var(--phosphor);
+  caret-shape: block;
+}
+input.term-input::placeholder {
+  color: color-mix(in srgb, var(--phosphor) 35%, transparent);
+}
+.term-screen:focus-within {
+  border-color: color-mix(in srgb, var(--phosphor) 60%, var(--line));
+}
+
+@media (max-width: 560px) {
+  .term-screen {
+    padding: 14px 12px 12px;
+    font-size: 0.75rem;
+  }
+  .term-ps1 {
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

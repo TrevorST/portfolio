@@ -1,0 +1,56 @@
+---
+import { build, site } from '~/site.config';
+
+const repo = 'https://github.com/TrevorST/portfolio';
+const commitHref = build.commit === 'dev' ? repo : `${repo}/commit/${build.commit}`;
+---
+
+<footer class="foot mono dim">
+  <div class="hazard" aria-hidden="true"></div>
+  <div class="row">
+    <span>// END OF FILE //</span>
+    <span>
+      TRV.SYS {build.version} · <a href={commitHref}>{build.commit}</a> · BUILT {build.date}
+    </span>
+    <span>
+      {site.links.map((l, i) => (
+        <>
+          {i > 0 && ' · '}
+          <a href={l.href} rel="me">
+            {l.label}
+          </a>
+        </>
+      ))}
+      {' · '}
+      <a href="/rss.xml">RSS</a>
+    </span>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max);
+    margin: 96px auto 0;
+    padding: 0 var(--gutter) 40px;
+    display: grid;
+    gap: 20px;
+  }
+  .hazard {
+    height: 6px;
+    opacity: 0.8;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px 16px;
+    flex-wrap: wrap;
+  }
+  a {
+    color: var(--dim);
+  }
+  a:hover {
+    color: var(--signal);
+  }
+</style>
