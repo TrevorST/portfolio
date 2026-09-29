@@ -241,6 +241,7 @@ const hasModel = existsSync('public/models/trv01.glb');
   </section>
 
   <section class="section contact" aria-labelledby="contact">
+    <LifeCanvas density={0.14} opacity={0.6} fade={false} interactive class="contact-life" />
     <Frame variant="flood" as="div">
       <Tag label="Contact" class="flood-tag" decode={false} />
       <h2 id="contact">Let's talk.</h2>
@@ -570,7 +571,21 @@ const hasModel = existsSync('public/models/trv01.glb');
   }
 
   .contact {
+    position: relative;
     padding-top: 96px;
+    padding-bottom: 96px;
+  }
+  /* Life plays on the void around the panel and bleeds past its edges; the
+     solid green panel sits on top of it */
+  .contact :global(.contact-life) {
+    inset: 0 calc(-1 * var(--gutter));
+    width: calc(100% + 2 * var(--gutter));
+    z-index: 0;
+    -webkit-mask: radial-gradient(ellipse at center, #000 60%, transparent 98%);
+    mask: radial-gradient(ellipse at center, #000 60%, transparent 98%);
+  }
+  .contact :global(.frame) {
+    z-index: 1;
   }
   .contact :global(.flood-tag) {
     color: var(--void);
