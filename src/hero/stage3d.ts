@@ -160,7 +160,10 @@ export async function mountStage(
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      input.blur();
+      // Esc quits a full-screen command first; a second Esc releases focus
+      if (!engine.interrupt()) input.blur();
+      e.preventDefault();
+      redraw();
       return;
     }
     const res = applyKey(engine, e, value);
