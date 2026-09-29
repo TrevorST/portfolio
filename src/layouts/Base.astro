@@ -1,6 +1,7 @@
 ---
 import '~/styles/global.css';
 import Fonts from '~/components/Fonts.astro';
+import Analytics from '~/components/Analytics.astro';
 import TopBar from '~/components/TopBar.astro';
 import Footer from '~/components/Footer.astro';
 import { site } from '~/site.config';
@@ -40,6 +41,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={site.name} />
     <meta name="twitter:card" content="summary" />
+    <Analytics />
     <slot name="head" />
   </head>
   <body>

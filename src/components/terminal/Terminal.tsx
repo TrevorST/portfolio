@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { TerminalEngine } from '~/terminal/engine';
+import { track } from '~/lib/analytics';
 import { commands } from '~/terminal/registry';
 import type { Line, SiteData, TerminalHost } from '~/terminal/types';
 import './terminal.css';
@@ -21,6 +22,11 @@ const host: TerminalHost = {
   },
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   now: () => new Date(),
+  onCommand(command, { hidden }) {
+    track('terminal-command', { command });
+    if (hidden) track('easter-egg', { command });
+    if (command === 'resume') track('resume-view', { source: 'terminal' });
+  },
 };
 
 function storageGet(key: string): string | null {

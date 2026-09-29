@@ -195,6 +195,11 @@ export class TerminalEngine {
   private async dispatch(line: string): Promise<void> {
     const [name = '', ...args] = tokenize(line);
     const cmd = this.registry.get(name.toLowerCase());
+    try {
+      this.host.onCommand?.(cmd?.name ?? 'unknown', { hidden: cmd?.hidden ?? false });
+    } catch {
+      /* observers must never break the terminal */
+    }
     if (!cmd) {
       this.print(`${name}: command not found. Try 'help'.`, 'error');
       return;

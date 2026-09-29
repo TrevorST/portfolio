@@ -69,6 +69,11 @@ export interface TerminalHost {
   navigate(href: string): void;
   sleep(ms: number): Promise<void>;
   now(): Date;
+  /**
+   * Called once per command line with the canonical command name ('unknown'
+   * when nothing matched). Never receives the arguments or the raw input.
+   */
+  onCommand?(name: string, info: { hidden: boolean }): void;
 }
 
 export interface Snapshot {
