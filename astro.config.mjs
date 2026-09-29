@@ -6,14 +6,9 @@ import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 
-// Canonical URL. Vercel exposes the production domain at build time, so previews
-// and production both get correct absolute URLs (RSS, sitemap, OG tags) without a
-// hard-coded domain. SITE_URL wins once a custom domain lands (v1.0.0).
-const site =
-  process.env.SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:4321');
+// Canonical URL for RSS, the sitemap and OG tags. The domain is the one on the
+// resume; SITE_URL overrides it (for example, to test a different host).
+const site = process.env.SITE_URL ?? 'https://www.trevortaylor.dev';
 
 // Build stamp shown in the footer and by the terminal's `version` command.
 // Labels carry real data (design principle P.02), so this is the actual commit.

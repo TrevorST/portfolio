@@ -40,6 +40,29 @@ tags: [astro, meta]
 ---
 ```
 
+**Job** → `src/content/experience/<slug>.md` (shown on the home page, on `/about` and by the terminal's `resume` command)
+
+```md
+---
+role: Software Developer, Full Stack
+org: UNIFYI
+orgNote: Acquired by Keandrews # optional
+location: Dallas, TX
+start: 2023-10
+end: present # or YYYY-MM
+summary: One line.
+stack: [Java, Spring Boot, Angular]
+metrics: # optional; real, sourced numbers only
+  - { value: '28', unit: '%', label: 'Client acquisition increase' }
+---
+
+### Project name
+
+- Bullets.
+```
+
+Education, skills and links live in [`src/site.config.ts`](src/site.config.ts).
+
 Frontmatter is validated in [`src/content.config.ts`](src/content.config.ts). A missing or mistyped field fails the build and the PR check instead of breaking a page.
 
 New projects and posts show up in the terminal automatically (`ls projects`, `open <slug>`).
