@@ -242,6 +242,15 @@ const hasModel = existsSync('public/models/trv01.glb');
 
   <section class="section contact" aria-labelledby="contact">
     <Frame variant="flood" as="div">
+      <LifeCanvas
+        rgb="7,8,10"
+        density={0.14}
+        opacity={0.2}
+        fade={false}
+        accents={false}
+        interactive
+        class="contact-life"
+      />
       <Tag label="Contact" class="flood-tag" decode={false} />
       <h2 id="contact">Let's talk.</h2>
       <p class="sub">
@@ -571,6 +580,14 @@ const hasModel = existsSync('public/models/trv01.glb');
 
   .contact {
     padding-top: 96px;
+  }
+  /* the Life field sits under the contact content, never over it */
+  .contact :global(.frame) {
+    overflow: hidden;
+  }
+  .contact :global(.frame > :not(.life):not(.c)) {
+    position: relative;
+    z-index: 1;
   }
   .contact :global(.flood-tag) {
     color: var(--void);
