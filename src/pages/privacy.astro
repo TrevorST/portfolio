@@ -1,0 +1,44 @@
+---
+import Base from '~/layouts/Base.astro';
+import Frame from '~/components/Frame.astro';
+import Tag from '~/components/Tag.astro';
+import '~/styles/prose.css';
+---
+
+<Base title="Privacy" description="What this site measures, and what it doesn't.">
+  <article class="privacy">
+    <Frame corners="tri">
+      <Tag label="Privacy" />
+      <h1>No cookies.</h1>
+      <p class="sub">What this site measures, and what it doesn't.</p>
+    </Frame>
+    <div class="prose">
+      <p>
+        This site uses <a href="https://umami.is">Umami</a> for privacy-first analytics. It sets no
+        cookies, stores nothing on your device, collects no personal data, and doesn't track you
+        across other sites. If your browser sends Do Not Track, nothing is recorded.
+      </p>
+      <h2>What is counted</h2>
+      <ul>
+        <li>Page views, time on site, referrer, country, browser, OS and device type.</li>
+        <li>
+          Which terminal commands are run: the command name only (<code>help</code>,<code>ls</code>
+          ), never what you type after it.
+        </li>
+        <li>Clicks on project links, contact links, and the résumé page.</li>
+      </ul>
+      <p>
+        That's everything. The data is aggregated in Umami and used only to see what's useful on
+        this site. Questions: <a href="mailto:trevorst18@gmail.com">trevorst18@gmail.com</a>.
+      </p>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .privacy {
+    display: grid;
+    gap: 36px;
+    padding-top: 48px;
+  }
+</style>

@@ -2,6 +2,8 @@
 
 Trevor Taylor's portfolio. Astro, Markdown content in git, and a terminal you can type into.
 
+**Stack:** Astro (static) · TypeScript · React islands (flat terminal) · three.js (3D hero, in progress) · Umami analytics (cookieless) · Vercel · GitHub Actions.
+
 Design: **Signal**, graphic retro futurism for code. See [`doc/design/design-principles.md`](doc/design/design-principles.md) and open [`doc/design/style-bible.html`](doc/design/style-bible.html) in a browser.
 
 ## Add a project or a post
@@ -73,7 +75,7 @@ Drop a file in [`src/terminal/commands/`](src/terminal/commands) that default-ex
 
 ## Analytics
 
-[Umami](https://umami.is) Cloud: cookieless, no personal data, no consent banner, respects Do Not Track.
+[Umami](https://umami.is) Cloud: cookieless, no personal data, no consent banner, respects Do Not Track. The public privacy note is at [`/privacy`](src/pages/privacy.astro); update it whenever the tracked events change.
 
 - **Enable:** put the website ID in `analytics.websiteId` in [`src/site.config.ts`](src/site.config.ts). Empty means off.
 - **Where it runs:** only on Vercel production builds. Previews, local builds and CI never load it. The script and collector are proxied through `/stats` (rewrites in `vercel.json`), so they're first-party.

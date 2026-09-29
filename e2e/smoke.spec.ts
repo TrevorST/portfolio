@@ -8,6 +8,7 @@ const PAGES = [
   '/projects/xv6-doom',
   '/blog',
   '/blog/rebuilding-this-site',
+  '/privacy',
 ];
 
 /** Fail the test on any console error or uncaught exception. */
