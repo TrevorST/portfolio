@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="192 200 870 850" fill="none">
+  <title>MoodBox — ideas unpacked</title>
+  <desc>An open lime-green box with an ivory angular M inside and three slate-blue marks on its side.</desc>
+  <style>
+    #draw:target path {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: moodbox-draw 1.35s cubic-bezier(.4,0,.2,1) both;
+      animation-delay: var(--delay, 0s);
+    }
+    @keyframes moodbox-draw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      #draw:target path { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+    }
+  </style>
+  <g id="draw">
+    <g stroke="#c6ec82" stroke-width="14" stroke-linejoin="miter" stroke-miterlimit="4">
+      <path pathLength="1" style="--delay:.48s" d="M318 638V841L627 1018L936 841V638"/>
+      <path pathLength="1" style="--delay:.60s" d="M627 638V1018"/>
+      <path pathLength="1" d="M224 372L460 233L627 343L383 482Z"/>
+      <path pathLength="1" style="--delay:.12s" d="M627 343L795 233L1028 372L871 482Z"/>
+      <path pathLength="1" style="--delay:.24s" d="M373 488L627 638L484 740L226 583Z"/>
+      <path pathLength="1" style="--delay:.36s" d="M627 638L879 488L1027 583L768 740Z"/>
+    </g>
+    <path pathLength="1" style="--delay:.72s" d="M452 492L600 409L644 433V485L726 470L783 499L640 588L594 562L651 523L584 529L595 468L502 521Z" stroke="#f4f1dc" stroke-width="13" stroke-linejoin="miter" stroke-miterlimit="4"/>
+    <g stroke="#8ca6b6" stroke-width="15">
+      <path pathLength="1" style="--delay:.84s" d="M667 849L779 785"/>
+      <path pathLength="1" style="--delay:.94s" d="M667 887L779 823"/>
+      <path pathLength="1" style="--delay:1.04s" d="M667 925L779 861"/>
+    </g>
+  </g>
+</svg>

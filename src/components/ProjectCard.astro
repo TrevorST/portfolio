@@ -1,0 +1,159 @@
+---
+import { Image } from 'astro:assets';
+import Tag from './Tag.astro';
+import { projectMeta, projectUrl, type Project } from '~/lib/content';
+
+/**
+ * Project card: dithered preview + build tag + status + stack chips. The
+ * preview sits under a signal-green Bayer dither and snaps to the real
+ * screenshot on hover (stepped, not eased).
+ */
+interface Props {
+  project: Project;
+  index: number;
+  eager?: boolean;
+}
+const { project, index, eager = false } = Astro.props;
+const { title, summary, cover, coverAlt, stack, status } = project.data;
+const live = status === 'live' || status === 'active';
+const label = `Project ${String(index + 1).padStart(2, '0')}`;
+---
+
+<article class="card">
+  <div class="shot">
+    {cover ? (
+      <Image
+        src={cover}
+        alt={coverAlt ?? ''}
+        widths={[400, 640, 800, 960]}
+        sizes="(min-width: 1100px) 380px, (min-width: 700px) 45vw, 92vw"
+        loading={eager ? 'eager' : 'lazy'}
+        class:list={['img', { contain: cover.format === 'svg' }]}
+      />
+    ) : (
+      <div class="img placeholder" aria-hidden="true" />
+    )}
+    <div class="dither" aria-hidden="true"></div>
+    <Tag label={label} class="shot-tag" decode={false} />
+  </div>
+  <div class="body">
+    <p class="mono dim">
+      {projectMeta(project).replace(/STATUS \w+$/, 'STATUS ')}
+      <span class:list={{ sig: live }}>{status.toUpperCase()}</span>
+    </p>
+    <h3>
+      <a href={projectUrl(project)} class="stretched">
+        {title}
+      </a>
+    </h3>
+    <p class="summary">{summary}</p>
+    {stack.length > 0 && (
+      <ul class="chips" aria-label="Stack">
+        {stack.map((s) => (
+          <li>{s}</li>
+        ))}
+      </ul>
+    )}
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--carbon);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-width: 0;
+  }
+  .card:hover,
+  .card:focus-within {
+    border-color: var(--signal);
+  }
+  .shot {
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
+    background: #0b0d0f;
+    border-bottom: 1px solid var(--line);
+  }
+  .shot :global(.img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    filter: grayscale(1) contrast(1.35) brightness(0.8);
+  }
+  .shot :global(.img.contain) {
+    object-fit: contain;
+    padding: 12%;
+  }
+  .placeholder {
+    background: radial-gradient(circle at 60% 55%, var(--signal-deep), transparent 60%);
+  }
+  /* 4x4 ordered (Bayer) dither in signal green, multiplied over the greyscale shot */
+  .dither {
+    position: absolute;
+    inset: 0;
+    background-color: var(--signal);
+    mix-blend-mode: multiply;
+    -webkit-mask: url('/dither.svg') repeat;
+    mask: url('/dither.svg') repeat;
+    mask-size: 4px 4px;
+    -webkit-mask-size: 4px 4px;
+    opacity: 1;
+  }
+  .shot::after {
+    /* tint the ground so unlit pixels read carbon, not photo */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--void) 45%, transparent);
+    pointer-events: none;
+  }
+  .card:hover .dither,
+  .card:focus-within .dither,
+  .card:hover .shot::after,
+  .card:focus-within .shot::after {
+    opacity: 0;
+    transition: opacity 0.24s steps(3);
+  }
+  .card:hover .shot :global(.img),
+  .card:focus-within .shot :global(.img) {
+    filter: none;
+    transition: filter 0.24s steps(3);
+  }
+  .shot :global(.shot-tag) {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+    background: color-mix(in srgb, var(--void) 70%, transparent);
+  }
+  .body {
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+  h3 {
+    font-size: var(--s-xl);
+    font-weight: 900;
+    font-variation-settings: 'wdth' 140;
+    overflow-wrap: anywhere;
+  }
+  h3 a {
+    color: var(--bone);
+    text-decoration: none;
+  }
+  .stretched::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .summary {
+    font-size: var(--s-sm);
+    color: var(--bone-2);
+  }
+</style>

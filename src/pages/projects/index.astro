@@ -1,0 +1,53 @@
+---
+import Base from '~/layouts/Base.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import { getProjects } from '~/lib/content';
+
+const projects = await getProjects();
+const active = projects.filter((p) => p.data.status === 'active' || p.data.status === 'live');
+const archive = projects.filter((p) => !active.includes(p));
+---
+
+<Base
+  title="Work"
+  description="Every project on file: what it is, what it is built with, and its status."
+>
+  <section class="section">
+    <SectionHead
+      idx="W"
+      title="Work"
+      level={1}
+      meta={`${String(projects.length).padStart(2, '0')} ON FILE`}
+    />
+    <p class="lede">
+      Tools, simulations and apps. Newest and active first; the archive is kept honest.
+    </p>
+  </section>
+
+  {active.length > 0 && (
+    <section class="section" aria-label="Active projects">
+      <h2 class="tag">
+        <span>Active // {active.length}</span>
+      </h2>
+      <div class="grid">
+        {active.map((p, i) => (
+          <ProjectCard project={p} index={i} eager={i < 2} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  {archive.length > 0 && (
+    <section class="section" aria-label="Archived projects">
+      <h2 class="tag">
+        <span>Archive // {archive.length}</span>
+      </h2>
+      <div class="grid">
+        {archive.map((p, i) => (
+          <ProjectCard project={p} index={active.length + i} />
+        ))}
+      </div>
+    </section>
+  )}
+</Base>

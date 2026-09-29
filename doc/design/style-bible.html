@@ -1,0 +1,502 @@
+<!doctype html>
+<!-- Snapshot of the "Signal" style bible, saved from https://claude.ai/artifact/2cvZtiPaDicw1AqPhUH4xM (v0.2) on 2026-09-29. Open in a browser. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Signal Style Bible</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Geist:wght@300..700&display=swap">
+<style>
+/* Layout: a single dark "field terminal" sheet on a 12-col grid. Every section is a labeled data panel with registration marks, running coordinates in the margins. */
+:root{
+  color-scheme: dark;
+  --void:#07080A;      /* page ground */
+  --carbon:#111316;    /* panels */
+  --line:#262A2F;      /* hairlines, grid */
+  --dim:#7C838B;       /* secondary text */
+  --bone:#E9E7E0;      /* primary text, warm off-white */
+  --signal:#C6FF1A;    /* acid green: the one loud colour */
+  --signal-deep:#1E3A06;
+  --flare:#FF2E7E;     /* magenta: glitch + error only, rare */
+  --hazard:#FF6B1A;    /* orange: warnings / hazard stripes only */
+
+  --f-display:"Anybody","Arial Narrow",Impact,sans-serif;
+  --f-mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-body:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  --s-xs:.6875rem; --s-sm:.8125rem; --s-md:1rem; --s-lg:1.25rem; --s-xl:2rem; --s-2xl:clamp(2.6rem,7vw,5.5rem); --s-hero:clamp(3.2rem,12vw,10rem);
+  --gutter:clamp(16px,4vw,48px);
+}
+*{box-sizing:border-box}
+html,body{background:var(--void);color:var(--bone)}
+body{margin:0;font-family:var(--f-body);font-size:var(--s-md);line-height:1.6;padding-inline:var(--gutter);padding-block:0 64px;overflow-x:hidden;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;background-position:-1px -1px;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,transparent 0%,var(--void) 70%);opacity:.92;z-index:0}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+main{position:relative;z-index:1;max-width:1240px;margin:0 auto}
+a{color:var(--signal)}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+::selection{background:var(--signal);color:var(--void)}
+
+/* utility type */
+.mono{font-family:var(--f-mono);font-size:var(--s-xs);letter-spacing:.08em;text-transform:uppercase;font-variation-settings:"wdth" 87.5}
+.dim{color:var(--dim)}
+.sig{color:var(--signal)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:.9;text-transform:uppercase}
+p{margin:0;max-width:65ch}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--void) 88%,transparent);backdrop-filter:blur(6px)}
+.bar nav{display:flex;gap:18px;flex-wrap:wrap}
+.bar nav a{color:var(--dim);text-decoration:none}
+.bar nav a:hover{color:var(--signal)}
+.blink{display:inline-block;width:.55em;height:.9em;background:var(--signal);vertical-align:-1px;margin-left:4px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* hero */
+.hero{position:relative;padding-block:56px 40px;display:grid;gap:28px;border-bottom:1px solid var(--line)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none;image-rendering:pixelated}
+.hero>*{position:relative}
+.hero-meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hero h1{font-size:var(--s-hero);font-weight:900;font-variation-settings:"wdth" 150;letter-spacing:-.02em;line-height:.82}
+.hero h1 .thin{font-weight:300;font-variation-settings:"wdth" 50;color:var(--dim);letter-spacing:0}
+.hero h1 .glitch{position:relative;display:inline-block;color:var(--signal)}
+.hero h1 .glitch::before,.hero h1 .glitch::after{content:attr(data-t);position:absolute;inset:0;pointer-events:none}
+.hero h1 .glitch::before{color:var(--flare);clip-path:inset(0 0 62% 0);transform:translate(-3px,0);animation:gl 3.2s infinite steps(1)}
+.hero h1 .glitch::after{color:var(--bone);clip-path:inset(70% 0 8% 0);transform:translate(4px,0);animation:gl 2.7s infinite steps(1) reverse}
+@keyframes gl{0%,86%,100%{opacity:0}88%{opacity:1;transform:translate(-5px,1px)}92%{opacity:1;transform:translate(3px,-1px)}95%{opacity:0}}
+.hero-foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;align-items:end}
+.hero-foot p{font-size:var(--s-lg);line-height:1.45}
+.barcode{height:40px;width:100%;max-width:260px;background:repeating-linear-gradient(90deg,var(--bone) 0 2px,transparent 2px 4px,var(--bone) 4px 5px,transparent 5px 9px,var(--bone) 9px 12px,transparent 12px 13px,var(--bone) 13px 14px,transparent 14px 18px)}
+
+/* section scaffold */
+section{padding-block:72px 16px;display:grid;gap:32px}
+.sec-head{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:end;border-bottom:1px solid var(--bone);padding-bottom:12px}
+.sec-head .idx{font-family:var(--f-mono);font-size:var(--s-sm);color:var(--signal)}
+.sec-head h2{font-size:var(--s-2xl);font-weight:800;font-variation-settings:"wdth" 125;letter-spacing:-.01em}
+.lede{font-size:var(--s-lg);max-width:60ch;color:var(--bone)}
+
+/* THE label: // NAME // with down triangles */
+.tag{display:inline-flex;align-items:center;gap:14px;font-family:var(--f-mono);font-size:var(--s-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--signal);padding:5px 10px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--signal) 10%,transparent) 20%,color-mix(in srgb,var(--signal) 10%,transparent) 80%,transparent)}
+.tag::before,.tag::after{content:"";width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--signal)}
+.tag span::before{content:"// "}.tag span::after{content:" //"}
+
+/* panels */
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.panel{position:relative;background:var(--carbon);border:1px solid var(--line);padding:22px;display:grid;gap:12px;align-content:start;min-width:0}
+.panel::before,.panel::after{content:"";position:absolute;width:10px;height:10px;border:1px solid var(--signal)}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.panel h3{font-size:var(--s-lg);font-weight:800;font-variation-settings:"wdth" 120;line-height:1.05}
+.panel p{font-size:var(--s-sm);color:#C9C7C0}
+.panel .code{font-family:var(--f-mono);font-size:var(--s-xs);color:var(--dim)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-family:var(--f-mono);font-size:var(--s-xs);text-transform:uppercase;letter-spacing:.06em}
+.kv dt{color:var(--dim)}.kv dd{margin:0;color:var(--bone)}
+
+/* two-col analysis */
+.split{display:grid;gap:32px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.list{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--line)}
+.list li{display:grid;grid-template-columns:3.2rem 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.list li b{font-family:var(--f-display);font-variation-settings:"wdth" 115;text-transform:uppercase;font-weight:750;display:block;margin-bottom:2px;letter-spacing:.01em}
+.list li .n{font-family:var(--f-mono);font-size:var(--s-xs);color:var(--signal);padding-top:4px}
+.list li p{font-size:var(--s-sm);color:#C9C7C0}
+.src{font-family:var(--f-mono);font-size:var(--s-xs);color:var(--dim);display:flex;flex-wrap:wrap;gap:6px 16px}
+.src a{color:var(--dim)}.src a:hover{color:var(--signal)}
+
+/* war dogs widget */
+.revive-stage{position:relative;background:#000;border:1px solid var(--line);min-height:380px;display:grid;place-items:center;overflow:hidden;padding:32px 16px}
+.revive-stage::after{content:"";position:absolute;left:50%;bottom:-140px;width:620px;max-width:140%;height:280px;transform:translateX(-50%);background:radial-gradient(ellipse,color-mix(in srgb,var(--signal) 32%,transparent),transparent 65%);pointer-events:none}
+.revive{position:relative;z-index:1;display:grid;justify-items:center;gap:18px}
+.revive .tag{background:linear-gradient(90deg,color-mix(in srgb,var(--signal) 6%,#000),color-mix(in srgb,var(--signal) 14%,#000),color-mix(in srgb,var(--signal) 6%,#000))}
+.namebox{font-family:var(--f-body);font-weight:600;font-size:1.35rem;letter-spacing:.04em;padding:6px 36px;background:color-mix(in srgb,var(--signal) 9%,#0c0f0c);border:1px solid color-mix(in srgb,var(--signal) 18%,transparent);border-top:0;margin-top:-18px;min-width:min(300px,80vw);text-align:center}
+.ring{width:160px;height:160px}
+.ring circle{fill:none}
+.ring .track{stroke:#3c3f3c;stroke-width:9}
+.ring .inner{stroke:#1d201d;stroke-width:2}
+.ring .prog{stroke:var(--signal);stroke-width:5;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;stroke-dasharray:440;stroke-dashoffset:440;animation:fill 4.5s cubic-bezier(.6,0,.3,1) infinite;filter:drop-shadow(0 0 6px var(--signal))}
+@keyframes fill{0%{stroke-dashoffset:440}80%,100%{stroke-dashoffset:0}}
+.ring text{fill:var(--signal);font-family:var(--f-mono);font-size:13px;letter-spacing:.1em}
+
+/* palette */
+.swatches{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+.sw{border:1px solid var(--line);background:var(--carbon);display:grid}
+.sw .chip{height:110px;position:relative}
+.sw .chip .pct{position:absolute;right:8px;bottom:6px;font-family:var(--f-mono);font-size:var(--s-xs)}
+.sw .meta{padding:12px;display:grid;gap:2px}
+.sw .meta b{font-family:var(--f-display);text-transform:uppercase;font-variation-settings:"wdth" 120;font-weight:800}
+.sw .meta small{font-size:var(--s-xs);color:var(--dim);line-height:1.4}
+.ratio{display:flex;height:22px;border:1px solid var(--line)}
+.ratio div{height:100%}
+
+/* type */
+.type-row{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:24px;padding-block:22px;border-bottom:1px solid var(--line);align-items:baseline}
+@media (max-width:640px){.type-row{grid-template-columns:1fr;gap:8px}}
+.spec-display{font-family:var(--f-display);font-weight:900;font-variation-settings:"wdth" 150;font-size:clamp(2.4rem,8vw,5.5rem);line-height:.85;text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere}
+.spec-cond{font-family:var(--f-display);font-weight:600;font-variation-settings:"wdth" 50;font-size:clamp(2rem,6vw,4rem);line-height:.9;text-transform:uppercase}
+.spec-mono{font-family:var(--f-mono);font-size:var(--s-sm);letter-spacing:.06em;text-transform:uppercase;color:var(--signal)}
+.spec-body{font-size:var(--s-lg);max-width:52ch}
+
+/* components */
+.btn{font-family:var(--f-mono);font-size:var(--s-xs);letter-spacing:.14em;text-transform:uppercase;padding:14px 22px 14px 18px;border:1px solid var(--signal);background:var(--signal);color:var(--void);cursor:pointer;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);display:inline-flex;gap:10px;align-items:center;font-weight:600}
+.btn.ghost{background:transparent;color:var(--signal)}
+.btn:hover{background:var(--bone);border-color:var(--bone);color:var(--void)}
+.hazard{height:14px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 10px,var(--void) 10px 20px)}
+.stat{display:grid;gap:4px}
+.stat .v{font-family:var(--f-display);font-weight:900;font-variation-settings:"wdth" 140;font-size:var(--s-2xl);line-height:.85;font-variant-numeric:tabular-nums;color:var(--signal)}
+.stat .v small{font-size:.35em;color:var(--bone);font-weight:500}
+.card-proj{position:relative;border:1px solid var(--line);background:var(--carbon);display:grid;grid-template-rows:auto 1fr;min-width:0;transition:border-color .2s}
+.card-proj:hover{border-color:var(--signal)}
+.card-proj .shot{aspect-ratio:16/9;max-width:100%;position:relative;overflow:hidden;background:#0b0d0f}
+.card-proj .shot canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.card-proj .shot .tag{position:absolute;top:10px;left:10px}
+.card-proj .body{padding:18px;display:grid;gap:10px}
+.card-proj h3{font-size:var(--s-xl);font-weight:900;font-variation-settings:"wdth" 140}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);padding:3px 7px;color:var(--dim)}
+.term{font-family:var(--f-mono);font-size:var(--s-sm);background:#050606;border:1px solid var(--line);padding:18px;line-height:1.9;overflow-x:auto;white-space:pre}
+.term .p{color:var(--signal)}
+
+/* FRAME HEADER: TypeSafe-style title block with four corner brackets */
+.frame{--fc:var(--signal);--ft:var(--bone);--fs:var(--dim);--fb:transparent;position:relative;background:var(--fb);color:var(--ft);padding:clamp(28px,5vw,56px) clamp(20px,6vw,72px);display:grid;gap:clamp(14px,2vw,22px);min-width:0}
+.frame>.c{position:absolute;width:12px;height:12px;border:0 solid var(--fc);pointer-events:none}
+.frame>.c.tl{top:14px;left:14px;border-top-width:1.5px;border-left-width:1.5px}
+.frame>.c.tr{top:14px;right:14px;border-top-width:1.5px;border-right-width:1.5px}
+.frame>.c.bl{bottom:14px;left:14px;border-bottom-width:1.5px;border-left-width:1.5px}
+.frame>.c.br{bottom:14px;right:14px;border-bottom-width:1.5px;border-right-width:1.5px}
+.frame[data-corners="tri"]>.c{width:0;height:0;border:0}
+.frame[data-corners="tri"]>.c.tl{border-top:9px solid var(--fc);border-right:9px solid transparent}
+.frame[data-corners="tri"]>.c.tr{border-top:9px solid var(--fc);border-left:9px solid transparent}
+.frame[data-corners="tri"]>.c.bl{border-bottom:9px solid var(--fc);border-right:9px solid transparent}
+.frame[data-corners="tri"]>.c.br{border-bottom:9px solid var(--fc);border-left:9px solid transparent}
+.frame h2,.frame h3{font-family:var(--f-display);text-transform:none;font-weight:700;font-variation-settings:"wdth" 100;letter-spacing:-.045em;line-height:.9;font-size:clamp(2.6rem,9vw,7.5rem);font-variant-numeric:tabular-nums;margin:0;overflow-wrap:anywhere}
+.frame .sub{font-family:var(--f-mono);font-size:var(--s-xs);letter-spacing:.02em;color:var(--fs);font-variation-settings:"wdth" 87.5;max-width:60ch}
+.frame .sub a{color:inherit;text-underline-offset:4px}
+.frame .sub a:hover{color:var(--fc)}
+.frame.flood{--fb:var(--signal);--ft:var(--void);--fs:#2B3A05;--fc:var(--void)}
+.frame.flare{--fb:var(--flare);--ft:#2A1216;--fs:#4A1E26;--fc:#2A1216}
+.frame.panelled{--fb:var(--carbon);border:1px solid var(--line)}
+.frame-demos{display:grid;gap:16px}
+.frame-spec{display:grid;gap:8px}
+
+/* principles */
+.princ{counter-reset:p;display:grid;gap:0;border-top:1px solid var(--bone)}
+.princ article{display:grid;grid-template-columns:minmax(0,110px) minmax(0,1fr) minmax(0,1.2fr);gap:24px;padding-block:24px;border-bottom:1px solid var(--line)}
+@media (max-width:760px){.princ article{grid-template-columns:1fr;gap:8px}}
+.princ .code{font-family:var(--f-mono);font-size:var(--s-xs);color:var(--signal);letter-spacing:.1em}
+.princ h3{font-size:clamp(1.4rem,3vw,2.1rem);font-weight:850;font-variation-settings:"wdth" 130}
+.princ p{font-size:var(--s-sm);color:#C9C7C0}
+.dodont{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.dodont ul{margin:0;padding-left:1.1em;display:grid;gap:8px;font-size:var(--s-sm)}
+.dodont .no li::marker{color:var(--flare)} .dodont .yes li::marker{color:var(--signal)}
+
+.scramble{font-family:var(--f-mono)}
+footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.ring .prog{stroke-dashoffset:110}}
+</style>
+</head><body>
+<main>
+  <div class="bar mono">
+    <span><span class="sig">TRV.SYS</span> / STYLE BIBLE v0.2<span class="blink" aria-hidden="true"></span></span>
+    <nav aria-label="Sections">
+      <a href="#marathon">01 Marathon</a><a href="#typesafe">02 TypeSafe</a><a href="#wardogs">03 War Dogs</a><a href="#principles">04 Principles</a><a href="#palette">05 Colour</a><a href="#type">06 Type</a><a href="#kit">07 Kit</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <canvas id="life" aria-hidden="true"></canvas>
+    <div class="hero-meta mono dim">
+      <span>PORTFOLIO // AESTHETIC DIRECTION</span>
+      <span id="clock">UTC --:--:--</span>
+      <span>LAT 00.000 / LON 00.000</span>
+    </div>
+    <span class="tag"><span>Codename Signal</span></span>
+    <h1>Graphic<br><span class="thin">retro</span> <span class="glitch" data-t="Futurism">Futurism</span><br>for code</h1>
+    <div class="hero-foot">
+      <p>Trevor's portfolio should feel like a piece of field equipment from a very good sci-fi game: black ground, one acid-green signal, labels on everything, and type that shouts.</p>
+      <div class="kv"><dt>Base</dt><dd>Void black + bone white</dd><dt>Signal</dt><dd>Acid green, used sparingly</dd><dt>Voice</dt><dd>Terse, labeled, confident</dd><dt>Sources</dt><dd>Marathon / TypeSafe / War Dogs</dd></div>
+      <div class="barcode" role="img" aria-label="Decorative barcode"></div>
+    </div>
+  </header>
+
+  <!-- 01 MARATHON -->
+  <section id="marathon">
+    <div class="sec-head"><span class="idx">01</span><h2>Marathon</h2><span class="mono dim">BUNGIE / 2026</span></div>
+    <p class="lede">Bungie calls it <b>"graphic retro futurism"</b>: retro roots, oddball cool, modern tech. Art director Joseph Cross frames it as <b>Graphic Realism</b>, where simplified, strong graphic design sits on top of believable scale and function. It is a sci‑fi world art‑directed like a poster.</p>
+    <div class="split">
+      <ul class="list">
+        <li><span class="n">M.01</span><div><b>Graphic design as the world</b><p>Built on The Designers Republic (the Wipeout studio), Ghost in the Shell, Aeon Flux, MGS2, F1 and MotoGP livery. Logos, stripes and type are part of the environment, not a layer on top.</p></div></li>
+        <li><span class="n">M.02</span><div><b>Everything is labeled</b><p>Objects announce their function: "SEAL" on an airlock, "ATTACH" on tape, hazard stripes, coordinates like "TAU CETI IV // SURFACE DATA". Utility becomes pop art.</p></div></li>
+        <li><span class="n">M.03</span><div><b>Saturation turned to 11</b><p>Near-black and off-white carry most of the frame, then one hyper-saturated acid colour hits hard. It is loud because the rest is quiet.</p></div></li>
+        <li><span class="n">M.04</span><div><b>Type with extreme widths</b><p>Ultra-wide heavy caps against tiny monospaced captions. The jump in scale (huge to minuscule, nothing in between) is most of the drama.</p></div></li>
+        <li><span class="n">M.05</span><div><b>Digital texture</b><p>Dithering, lattice patterns from 3D printing, scanlines, glitchy UI, datamosh flashes. The screen admits it is a screen.</p></div></li>
+      </ul>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><span class="code">WEB TRANSLATION</span><h3>How we recreate it</h3>
+          <p>Variable fonts with a wide axis for headings, a mono for every label. CSS grid lines on the page ground. Registration corners on panels. A canvas dither layer in the hero. One accent colour, never two at once.</p></div>
+        <div class="panel"><span class="code">WHAT NOT TO COPY</span><h3>Don't cosplay the game</h3>
+          <p>No fake weapons, no faction logos, no lore. We borrow the <i>system</i> (labels, contrast, rhythm) and apply it to real engineering content: repos, stacks, build numbers, commit hashes.</p></div>
+        <div class="src"><a href="https://www.creativebloq.com/3d/video-game-design/bungies-art-director-explains-marathons-controversial-art-style">Creative Bloq / Joseph Cross</a><a href="https://www.space.com/entertainment/space-games/bungie-explains-marathons-graphic-retro-futurism-aesthetic-and-the-live-narrative-lessons-it-learned-from-destiny-interview">Space.com / Brian Vinton</a><a href="https://www.brace.design/single-post/bungie-s-marathon-an-eye-for-design">Brace Design</a><a href="https://www.marathonthegame.com/">marathonthegame.com</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 TYPESAFE -->
+  <section id="typesafe">
+    <div class="sec-head"><span class="idx">02</span><h2>TypeSafe</h2><span class="mono dim">TS.AI.0S1 / JEV</span></div>
+    <p class="lede">TypeSafe AI (makers of Jev, a model that returns typed decisions instead of text) takes the same sci‑fi energy and makes it austere. Where Marathon shouts, TypeSafe whispers in a lab coat.</p>
+    <div class="split">
+      <ul class="list">
+        <li><span class="n">T.01</span><div><b>Versioned everything</b><p>Components carry build tags like "Clock Tool 1.1", "Glider 1.1", "Version 0.01". The site reads like shipped software, not marketing.</p></div></li>
+        <li><span class="n">T.02</span><div><b>Glyphs as dividers</b><p>Math and logic symbols (∵ ⩆) separate sections instead of lines or icons. Cheap, strange and memorable.</p></div></li>
+        <li><span class="n">T.03</span><div><b>Numbers are the hero</b><p>"193.6x Faster, 444.6x Cheaper", "$0.000081 vs $0.013880", "0.114s". Precise figures with too many decimals feel honest and technical.</p></div></li>
+        <li><span class="n">T.04</span><div><b>Living algorithms</b><p>Conway's Game of Life and small generative visuals run on the page. The decoration is itself computation.</p></div></li>
+        <li><span class="n">T.05</span><div><b>Contrarian, short copy</b><p>"We took the opposite research direction." "Decisions, not strings." One idea per line, no filler.</p></div></li>
+        <li><span class="n">T.06</span><div><b>Framed headlines</b><p>Big stat headlines sit inside four thin corner brackets, with a tiny mono footnote and an underlined "(Proof)" link under them. Flooded in a flat colour with dark type, tracked very tight. Rebuilt as the Frame Header in the kit.</p></div></li>
+      </ul>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><span class="code">WEB TRANSLATION</span><h3>How we recreate it</h3>
+          <p>Every project gets a build tag (MOODBOX 2.3). Stats read as raw metrics with real units. The hero background on this page is a running Game of Life, dithered in the signal colour.</p></div>
+        <div class="panel"><span class="code">NOTE</span><h3>What I could verify</h3>
+          <p>From your screenshot: their framed headers use a flat pink flood, near-black brown type in a tight neo-grotesk, and a small title-case mono footnote. Their exact hex values and font files weren't reachable from here, so the colours and fonts on this page are my own picks.</p></div>
+        <div class="src"><a href="https://typesafe.ai/">typesafe.ai</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 WAR DOGS -->
+  <section id="wardogs">
+    <div class="sec-head"><span class="idx">03</span><h2>War Dogs</h2><span class="mono dim">REVIVE WIDGET / REBUILT</span></div>
+    <div class="split">
+      <div class="revive-stage" aria-label="Recreation of the War Dogs revive widget">
+        <div class="revive">
+          <span class="tag"><span>Being revived by</span></span>
+          <div class="namebox">ImOnUrGoat</div>
+          <svg class="ring" viewBox="0 0 160 160" aria-hidden="true">
+            <circle class="track" cx="80" cy="80" r="70"/>
+            <circle class="prog" cx="80" cy="80" r="70"/>
+            <circle class="inner" cx="80" cy="80" r="58"/>
+            <text x="80" y="86" text-anchor="middle">SYNC</text>
+          </svg>
+        </div>
+      </div>
+      <ul class="list">
+        <li><span class="n">W.01</span><div><b>The // NAME // label</b><p>Double slashes bracket the label like a code comment. Two small down-triangles sit at each end and point at the content below. This is our signature component: every section, card and nav item uses it.</p></div></li>
+        <li><span class="n">W.02</span><div><b>Label over plate</b><p>A thin, dim label strip sits on top of a solid name plate. Small caps mono above, bold readable sans below. Hierarchy with almost no styling.</p></div></li>
+        <li><span class="n">W.03</span><div><b>Progress as a ring</b><p>A heavy grey track with a thin glowing arc. We reuse it for loading states, skill meters and a page-scroll indicator.</p></div></li>
+        <li><span class="n">W.04</span><div><b>Glow from below</b><p>A soft green bloom rises from the bottom of a pure black frame. It gives depth without gradients across the whole page.</p></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 04 PRINCIPLES -->
+  <section id="principles">
+    <div class="sec-head"><span class="idx">04</span><h2>Principles</h2><span class="mono dim">7 RULES</span></div>
+    <div class="princ">
+      <article><span class="code">P.01</span><h3>One signal</h3><p>Acid green is the only loud colour. It marks what matters: the current section, the primary action, live data. If two things are green, one of them is wrong. Magenta appears only in glitches and errors.</p></article>
+      <article><span class="code">P.02</span><h3>Label everything</h3><p>Every block gets a // TAG //, a code (P.02, M.01) and ideally a real data point: a build number, a date, a commit hash, a stack. Labels carry true information, never lorem.</p></article>
+      <article><span class="code">P.03</span><h3>Scale is drama</h3><p>Huge ultra-wide headlines, tiny mono captions, readable body text, and nothing in between. Skip the mid-size "nice" headings that every template uses.</p></article>
+      <article><span class="code">P.04</span><h3>Show the machine</h3><p>Grid lines, registration corners, scanlines, dither and a running algorithm. The page looks like an instrument that is switched on, not a brochure.</p></article>
+      <article><span class="code">P.05</span><h3>Quiet ground</h3><p>90% of any screen is void black, carbon panels and bone text. Texture stays subtle (low-opacity grid, faint scanlines) so the signal colour and the type can hit hard.</p></article>
+      <article><span class="code">P.06</span><h3>Motion is a boot, not a show</h3><p>One orchestrated moment: a boot sequence on load, text that decodes from scrambled glyphs, rings that fill. Hover states snap (steps, not easing). Everything settles and stays readable, and respects reduced motion.</p></article>
+      <article><span class="code">P.07</span><h3>Terse, confident copy</h3><p>Short declarative lines in the TypeSafe voice. Real numbers with units. "Shipped 14 builds. 0 regressions." beats a paragraph about passion.</p></article>
+    </div>
+    <div class="dodont">
+      <div class="panel"><span class="code sig">DO</span><ul class="yes">
+        <li>Use square corners and clipped (chamfered) corners on buttons</li>
+        <li>Put the // TAG // above every section heading</li>
+        <li>Give each project a build tag, status and stack chips</li>
+        <li>Keep text contrast high: bone on void</li>
+      </ul></div>
+      <div class="panel"><span class="code" style="color:var(--flare)">DON'T</span><ul class="no">
+        <li>Rounded cards with soft drop shadows</li>
+        <li>Purple-blue gradients or rainbow neon</li>
+        <li>Glitch effects on body text or anything you have to read</li>
+        <li>Fake game lore, weapons or faction logos</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- 05 PALETTE -->
+  <section id="palette">
+    <div class="sec-head"><span class="idx">05</span><h2>Colour</h2><span class="mono dim">6 TOKENS / DARK ONLY</span></div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--void);border-bottom:1px solid var(--line)"><span class="pct dim">70%</span></div><div class="meta"><b>Void</b><span class="mono">#07080A</span><small>Page ground. Slightly blue-black, never pure #000 except inside HUD stages.</small></div></div>
+      <div class="sw"><div class="chip" style="background:var(--carbon)"><span class="pct dim">15%</span></div><div class="meta"><b>Carbon</b><span class="mono">#111316</span><small>Panels, cards, code blocks.</small></div></div>
+      <div class="sw"><div class="chip" style="background:var(--line)"><span class="pct dim">GRID</span></div><div class="meta"><b>Line</b><span class="mono">#262A2F</span><small>Hairlines, the page grid, borders.</small></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bone)"><span class="pct" style="color:var(--void)">10%</span></div><div class="meta"><b>Bone</b><span class="mono">#E9E7E0</span><small>Primary text. Warm off-white so it doesn't buzz next to the green.</small></div></div>
+      <div class="sw"><div class="chip" style="background:var(--signal)"><span class="pct" style="color:var(--void)">4%</span></div><div class="meta"><b>Signal</b><span class="mono">#C6FF1A</span><small>The one accent. Active states, primary buttons, labels, live data.</small></div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(90deg,var(--flare) 50%,var(--hazard) 50%)"><span class="pct" style="color:var(--void)">&lt;1%</span></div><div class="meta"><b>Flare / Hazard</b><span class="mono">#FF2E7E / #FF6B1A</span><small>Glitch slices and errors; hazard stripes and warnings. Never decorative.</small></div></div>
+    </div>
+    <div class="ratio" role="img" aria-label="Colour usage ratio: 70 void, 15 carbon, 10 bone, 4 signal, 1 flare">
+      <div style="width:70%;background:var(--void)"></div><div style="width:15%;background:var(--carbon)"></div><div style="width:10%;background:var(--bone)"></div><div style="width:4%;background:var(--signal)"></div><div style="width:1%;background:var(--flare)"></div>
+    </div>
+    <p class="mono dim">Signal on void contrast ≈ 17:1. Bone on void ≈ 16:1. Dim (#7C838B) is for captions only.</p>
+  </section>
+
+  <!-- 06 TYPE -->
+  <section id="type">
+    <div class="sec-head"><span class="idx">06</span><h2>Type</h2><span class="mono dim">3 FACES / GOOGLE FONTS</span></div>
+    <div>
+      <div class="type-row"><div class="mono dim">DISPLAY / ANYBODY<br>900 · WIDTH 150</div><div class="spec-display">Moodbox</div></div>
+      <div class="type-row"><div class="mono dim">DISPLAY ALT / ANYBODY<br>600 · WIDTH 50</div><div class="spec-cond">Software engineer / builder</div></div>
+      <div class="type-row"><div class="mono dim">LABEL + DATA / MARTIAN MONO<br>400 · +0.08em · CAPS</div><div class="spec-mono">// BUILD 2.3.1 // COMMIT 8F3A21C // STATUS: LIVE</div></div>
+      <div class="type-row"><div class="mono dim">BODY / GEIST<br>400 · 16–20px · 1.6</div><p class="spec-body">Body text stays calm and highly readable. The drama lives in headlines and labels, so paragraphs about how a project was built never fight the chrome around them.</p></div>
+    </div>
+    <p class="mono dim">Anybody's width axis gives the Marathon wide/condensed contrast from one file. Martian Mono has a width axis too, so labels can be squeezed without looking cramped.</p>
+  </section>
+
+  <!-- 07 KIT -->
+  <section id="kit">
+    <div class="sec-head"><span class="idx">07</span><h2>Kit</h2><span class="mono dim">COMPONENTS</span></div>
+    <div class="frame-spec">
+      <span class="tag"><span>Frame header</span></span>
+      <p class="dim" style="font-size:var(--s-sm)">The second title component, after TypeSafe. Four corner marks, a huge tight headline, a small mono subtitle. Use it for page openers and for the one stat that should stop a scroll. Frame headers never stack: one per screen, and the // TAG // label stays the everyday section heading.</p>
+    </div>
+    <div class="frame-demos">
+      <header class="frame panelled">
+        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+        <h3>Circleflow ships<br>in 0.114s.</h3>
+        <p class="sub">*Example figure, replace with a real Circleflow metric <a href="#kit">(Proof)</a></p>
+      </header>
+      <header class="frame flood">
+        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+        <h3>Built fast,<br>built typed.</h3>
+        <p class="sub">*Flood variant. Signal green ground, void type. One per page at most <a href="#kit">(Source)</a></p>
+      </header>
+      <div class="grid">
+        <header class="frame flare" data-corners="tri">
+          <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+          <h3 style="font-size:clamp(2.2rem,6vw,4rem)">404.0x<br>Lost.</h3>
+          <p class="sub">*Flare variant with triangle corners. Error and 404 pages only</p>
+        </header>
+        <header class="frame" data-corners="tri">
+          <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+          <h3 style="font-size:clamp(2.2rem,6vw,4rem)">Moodbox.</h3>
+          <p class="sub">*Bare variant with triangle corners, for case-study openers</p>
+        </header>
+      </div>
+      <div class="term" role="img" aria-label="Frame header markup">&lt;header class="frame [panelled|flood|flare]" [data-corners="tri"]&gt;
+  &lt;span class="c tl"&gt;&lt;/span&gt;&lt;span class="c tr"&gt;&lt;/span&gt;&lt;span class="c bl"&gt;&lt;/span&gt;&lt;span class="c br"&gt;&lt;/span&gt;
+  &lt;h2&gt;193.6x Faster,&lt;br&gt;444.6x Cheaper.&lt;/h2&gt;
+  &lt;p class="sub"&gt;*Footnote in mono &lt;a href="…"&gt;(Proof)&lt;/a&gt;&lt;/p&gt;
+&lt;/header&gt;</div>
+    </div>
+    <div class="grid">
+      <div class="card-proj">
+        <div class="shot"><canvas data-dither="0" aria-hidden="true"></canvas><span class="tag"><span>Project 01</span></span></div>
+        <div class="body"><div class="mono dim">BUILD 1.0 · STATUS <span class="sig">LIVE</span></div><h3>Moodbox</h3><p style="font-size:var(--s-sm);color:#C9C7C0">Project card. Dithered preview, build tag, status, stack chips. Placeholder copy until the real case study lands.</p><div class="chips"><span>moodgen</span><span>stack tbd</span></div></div>
+      </div>
+      <div class="card-proj">
+        <div class="shot"><canvas data-dither="1" aria-hidden="true"></canvas><span class="tag"><span>Project 02</span></span></div>
+        <div class="body"><div class="mono dim">BUILD 1.0 · STATUS <span class="sig">LIVE</span></div><h3>Circleflow</h3><p style="font-size:var(--s-sm);color:#C9C7C0">Hover the card: the border snaps to signal green. On the real site the preview decodes from dither to the actual screenshot.</p><div class="chips"><span>circleflow</span><span>stack tbd</span></div></div>
+      </div>
+      <div class="panel" style="gap:22px">
+        <span class="code">BUTTONS / HAZARD / STATS</span>
+        <div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn" id="btn-a" type="button">View build ▸</button><button class="btn ghost" id="btn-b" type="button">Source</button></div>
+        <div class="hazard" role="img" aria-label="Hazard stripe"></div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap">
+          <div class="stat"><span class="mono dim">Example metric</span><span class="v">193.6<small>x</small></span></div>
+          <div class="stat"><span class="mono dim">Example latency</span><span class="v">0.114<small>s</small></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="split">
+      <div class="panel"><span class="code">TEXT DECODE / HOVER ME</span>
+        <h3 class="scramble" data-final="TREVOR // ENGINEER" tabindex="0" style="font-size:clamp(1.3rem,4vw,2.2rem)">TREVOR // ENGINEER</h3>
+        <p>Headings and labels resolve from random glyphs on load and on hover, in stepped frames. Never used on paragraphs.</p></div>
+      <div class="term" role="img" aria-label="Terminal-style boot log example"><span class="p">&gt;</span> boot trv.sys --profile portfolio
+<span class="dim">[ok]</span> grid .............. online
+<span class="dim">[ok]</span> signal ............ #C6FF1A
+<span class="dim">[ok]</span> projects .......... 2 loaded
+<span class="p">&gt;</span> // READY //<span class="blink" aria-hidden="true"></span></div>
+    </div>
+  </section>
+
+  <footer class="mono dim"><span>// END OF FILE //</span><span>TRV.SYS STYLE BIBLE v0.2</span><span>OWNER: PORTFOLIO LOOK AND FEEL</span></footer>
+</main>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var SIG = '#C6FF1A';
+
+  // clock
+  var clock = document.getElementById('clock');
+  function tick(){ var d=new Date(); clock.textContent='UTC '+d.toISOString().slice(11,19); }
+  tick(); setInterval(tick,1000);
+
+  // Game of Life hero, dithered cells
+  var cv = document.getElementById('life'), ctx = cv.getContext('2d');
+  var cell = 8, cols, rows, g;
+  function seed(){
+    var r = cv.getBoundingClientRect();
+    cols = Math.max(10, Math.floor(r.width/cell)); rows = Math.max(10, Math.floor(r.height/cell));
+    cv.width = cols*cell; cv.height = rows*cell;
+    g = new Uint8Array(cols*rows);
+    for (var i=0;i<g.length;i++) g[i] = Math.random() < .16 ? 1 : 0;
+  }
+  function step(){
+    var n = new Uint8Array(cols*rows), alive=0;
+    for (var y=0;y<rows;y++) for (var x=0;x<cols;x++){
+      var c=0;
+      for (var dy=-1;dy<=1;dy++) for (var dx=-1;dx<=1;dx++){ if(!dx&&!dy)continue; c+=g[((y+dy+rows)%rows)*cols+((x+dx+cols)%cols)]; }
+      var i=y*cols+x, v=(c===3||(c===2&&g[i]))?1:0; n[i]=v; alive+=v;
+    }
+    g=n; if (alive < cols*rows*.02) seed();
+  }
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for (var y=0;y<rows;y++) for (var x=0;x<cols;x++){
+      if(!g[y*cols+x]) continue;
+      var fade = 1 - y/rows; // fade toward bottom
+      ctx.fillStyle = (x+y)%7===0 ? SIG : 'rgba(198,255,26,'+(0.12+0.35*fade)+')';
+      // dither: checkerboard pixels inside each cell
+      for (var py=0;py<cell-2;py+=2) for (var px=(py/2)%2;px<cell-2;px+=2) ctx.fillRect(x*cell+px,y*cell+py,1,1);
+    }
+  }
+  seed(); draw();
+  if (!reduce) setInterval(function(){ step(); draw(); }, 140);
+  var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){ seed(); draw(); },200); });
+
+  // Dithered placeholders for project cards (ordered Bayer dither of a gradient/shape)
+  var bayer=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+  document.querySelectorAll('canvas[data-dither]').forEach(function(c){
+    var kind=+c.dataset.dither, w=160, h=90; c.width=w; c.height=h;
+    var x2=c.getContext('2d'), img=x2.createImageData(w,h);
+    for (var y=0;y<h;y++) for (var x=0;x<w;x++){
+      var v;
+      if(kind===0){ var dx=x-w*.62, dy=y-h*.55; v = Math.max(0,1-Math.sqrt(dx*dx+dy*dy)/60) + 0.25*Math.sin(x/9)*Math.cos(y/7); }
+      else { var r=Math.sqrt(Math.pow(x-w/2,2)+Math.pow(y-h/2,2)); v = (Math.sin(r/5)+1)/2 * Math.max(0,1-r/80); }
+      var on = v > (bayer[(y%4)*4+(x%4)]+.5)/16;
+      var k=(y*w+x)*4;
+      if(on){ img.data[k]=198; img.data[k+1]=255; img.data[k+2]=26; img.data[k+3]=255; }
+      else { img.data[k]=11; img.data[k+1]=13; img.data[k+2]=15; img.data[k+3]=255; }
+    }
+    x2.putImageData(img,0,0);
+  });
+
+  // Text decode
+  var glyphs='!<>-_\\/[]{}=+*^?#01ABCDEFXZ';
+  function decode(el){
+    if (reduce) return;
+    var final=el.dataset.final, frame=0, total=18;
+    clearInterval(el._t);
+    el._t=setInterval(function(){
+      var out='';
+      for (var i=0;i<final.length;i++){
+        var ch=final[i];
+        out += (ch===' '||ch==='/'|| i < (frame/total)*final.length) ? ch : glyphs[(Math.random()*glyphs.length)|0];
+      }
+      el.textContent=out; frame++;
+      if(frame>total){ clearInterval(el._t); el.textContent=final; }
+    },45);
+  }
+  document.querySelectorAll('.scramble').forEach(function(el){
+    decode(el);
+    el.addEventListener('mouseenter',function(){decode(el);});
+    el.addEventListener('focus',function(){decode(el);});
+  });
+})();
+</script>
+</body></html>

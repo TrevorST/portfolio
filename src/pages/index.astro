@@ -1,0 +1,385 @@
+---
+import { Image } from 'astro:assets';
+import Base from '~/layouts/Base.astro';
+import Tag from '~/components/Tag.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import Frame from '~/components/Frame.astro';
+import LifeCanvas from '~/components/LifeCanvas.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import PostList from '~/components/PostList.astro';
+import Terminal from '~/components/terminal/Terminal.tsx';
+import portrait from '~/assets/trevor.webp';
+import { getPosts, getProjects, terminalData } from '~/lib/content';
+import { build, site } from '~/site.config';
+import { commands } from '~/terminal/registry';
+
+const [projects, posts, termData] = await Promise.all([getProjects(), getPosts(), terminalData()]);
+const HOME_CARDS = 6;
+const selected = projects.slice(0, HOME_CARDS);
+const activeCount = projects.filter(
+  (p) => p.data.status === 'active' || p.data.status === 'live',
+).length;
+const visibleCommands = commands.filter((c) => !c.hidden).length;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<Base>
+  <header class="hero">
+    <LifeCanvas />
+    <div class="hero-meta mono dim">
+      <span>PORTFOLIO // {site.name.toUpperCase()}</span>
+      <span data-clock>UTC --:--:--</span>
+      <span>
+        BUILD {build.version} · {build.commit}
+      </span>
+    </div>
+    <Tag label={site.role} />
+    <h1>
+      Trevor
+      <br />
+      <span class="glitch" data-t="Taylor">
+        Taylor
+      </span>
+      <br />
+      <span class="thin">builds tools</span>
+    </h1>
+    <div class="hero-foot">
+      <p class="lede">
+        Software engineer. I make tools for making things, and the automated pipelines that test and
+        ship them.
+      </p>
+      <dl class="kv">
+        <dt>Projects</dt>
+        <dd>{pad(projects.length)} on file</dd>
+        <dt>Active</dt>
+        <dd>{pad(activeCount)} in development</dd>
+        <dt>Writing</dt>
+        <dd>
+          {pad(posts.length)} {posts.length === 1 ? 'post' : 'posts'}
+        </dd>
+        <dt>Terminal</dt>
+        <dd>{visibleCommands} commands, some unlisted</dd>
+      </dl>
+      <div class="cta">
+        <a class="btn" href="#work">
+          View work ▸
+        </a>
+        <a class="btn ghost" href="#terminal">
+          Open terminal
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="terminal">
+    <SectionHead
+      idx="01"
+      title="Terminal"
+      id="terminal"
+      meta={`TRV.SYS ${build.version} // INTERACTIVE`}
+    />
+    <div class="term-grid">
+      <div class="term-copy">
+        <p class="lede">
+          The old site had a fake terminal. This one reads the real site: its file system is built
+          from every project and post here.
+        </p>
+        <ul class="hints mono">
+          <li>
+            <span class="sig">help</span> what it can do
+          </li>
+          <li>
+            <span class="sig">ls projects</span> everything on file
+          </li>
+          <li>
+            <span class="sig">open circleflow</span> jump to a project
+          </li>
+          <li>
+            <span class="sig">contact</span> reach me
+          </li>
+        </ul>
+        <p class="mono dim">Tab completes · ↑↓ history · Ctrl+L clears</p>
+      </div>
+      <div class="term-slot">
+        <Terminal client:visible data={termData} />
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="work">
+    <SectionHead
+      idx="02"
+      title="Selected work"
+      id="work"
+      meta={`${pad(projects.length)} PROJECTS`}
+    />
+    <div class="grid">
+      {selected.map((p, i) => (
+        <ProjectCard project={p} index={i} />
+      ))}
+    </div>
+    {projects.length > HOME_CARDS && (
+      <a class="btn ghost" href="/projects">
+        All {projects.length} projects ▸
+      </a>
+    )}
+  </section>
+
+  <section class="section" aria-labelledby="writing">
+    <SectionHead idx="03" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
+    <PostList posts={posts.slice(0, 5)} />
+    {posts.length > 5 && (
+      <a class="btn ghost" href="/blog">
+        All writing ▸
+      </a>
+    )}
+  </section>
+
+  <section class="section" aria-labelledby="about">
+    <SectionHead idx="04" title="About" id="about" meta="ID // OPERATOR" />
+    <div class="about">
+      <figure class="portrait">
+        <Image
+          src={portrait}
+          alt="Trevor Taylor"
+          widths={[320, 480, 640]}
+          sizes="(min-width: 800px) 320px, 70vw"
+        />
+        <div class="dither" aria-hidden="true"></div>
+        <figcaption class="mono dim">OPERATOR · {site.name.toUpperCase()}</figcaption>
+      </figure>
+      <div class="about-copy">
+        <p class="lede">{site.bio}</p>
+        <dl class="kv">
+          <dt>Education</dt>
+          <dd>B.S. Computer Science, East Tennessee State University</dd>
+          <dt>Builds</dt>
+          <dd>Editors, generators, simulations, agent pipelines</dd>
+          <dt>Speaks</dt>
+          <dd>TypeScript, React, Python, C#, Java, C++, SQL</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section contact" aria-labelledby="contact">
+    <Frame variant="flood" as="div">
+      <Tag label="Contact" class="flood-tag" decode={false} />
+      <h2 id="contact">Let's talk.</h2>
+      <p class="sub">
+        *Email is fastest: <a href={`mailto:${site.email}`}>{site.email}</a>
+      </p>
+      <div class="cta">
+        <a class="btn dark" href={`mailto:${site.email}`}>
+          Email me ▸
+        </a>
+        {site.links.map((l) => (
+          <a class="btn dark ghost" href={l.href} rel="me">
+            {l.label}
+          </a>
+        ))}
+      </div>
+    </Frame>
+  </section>
+</Base>
+
+<script>
+  const el = document.querySelector<HTMLElement>('[data-clock]');
+  if (el) {
+    const tick = () => (el.textContent = `UTC ${new Date().toISOString().slice(11, 19)}`);
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: 56px 48px;
+    display: grid;
+    gap: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero > :global(*) {
+    position: relative;
+  }
+  .hero > :global(canvas) {
+    position: absolute;
+  }
+  .hero-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+  }
+  h1 {
+    font-size: var(--s-hero);
+    font-weight: 900;
+    font-variation-settings: 'wdth' 150;
+    letter-spacing: -0.02em;
+    line-height: 0.82;
+    overflow-wrap: anywhere;
+  }
+  .thin {
+    font-weight: 300;
+    font-variation-settings: 'wdth' 50;
+    color: var(--dim);
+    letter-spacing: 0;
+  }
+  .glitch {
+    position: relative;
+    display: inline-block;
+    color: var(--signal);
+  }
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-t);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .glitch::before {
+    color: var(--flare);
+    clip-path: inset(0 0 62% 0);
+    animation: gl 3.2s infinite steps(1);
+  }
+  .glitch::after {
+    color: var(--bone);
+    clip-path: inset(70% 0 8% 0);
+    animation: gl 2.7s infinite steps(1) reverse;
+  }
+  @keyframes gl {
+    0%,
+    86%,
+    100% {
+      opacity: 0;
+    }
+    88% {
+      opacity: 1;
+      transform: translate(-5px, 1px);
+    }
+    92% {
+      opacity: 1;
+      transform: translate(3px, -1px);
+    }
+    95% {
+      opacity: 0;
+    }
+  }
+  .hero-foot {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 24px;
+    align-items: end;
+  }
+  .cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .term-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: stretch;
+  }
+  @media (max-width: 860px) {
+    .term-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .term-copy {
+    display: grid;
+    gap: 20px;
+    align-content: start;
+  }
+  .hints {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .hints li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--dim);
+  }
+  .term-slot {
+    height: clamp(22rem, 60vh, 32rem);
+  }
+
+  .about {
+    display: grid;
+    gap: 32px;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .about {
+      grid-template-columns: 1fr;
+    }
+    .portrait {
+      max-width: 280px;
+    }
+  }
+  .portrait {
+    position: relative;
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--carbon);
+  }
+  .portrait :global(img) {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.2) brightness(0.85);
+  }
+  .portrait .dither {
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 1;
+    background: var(--signal);
+    mix-blend-mode: multiply;
+    mask: url('/dither.svg') repeat;
+    -webkit-mask: url('/dither.svg') repeat;
+    mask-size: 4px 4px;
+    -webkit-mask-size: 4px 4px;
+    opacity: 0.9;
+  }
+  .portrait figcaption {
+    padding: 8px 10px;
+    border-top: 1px solid var(--line);
+  }
+  .about-copy {
+    display: grid;
+    gap: 24px;
+  }
+
+  .contact {
+    padding-top: 96px;
+  }
+  .contact :global(.flood-tag) {
+    color: var(--void);
+    background: none;
+  }
+  .btn.dark {
+    background: var(--void);
+    border-color: var(--void);
+    color: var(--signal);
+  }
+  .btn.dark.ghost {
+    background: transparent;
+    color: var(--void);
+  }
+  .btn.dark:hover {
+    background: var(--bone);
+    border-color: var(--bone);
+    color: var(--void);
+  }
+</style>
