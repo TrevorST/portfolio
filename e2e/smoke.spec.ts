@@ -91,6 +91,19 @@ test.describe('flat terminal', () => {
     await expect(page).toHaveURL(/\/projects\/circleflow$/);
   });
 
+  test('hidden life command plays until a key is pressed', async ({ page }) => {
+    await page.goto('/?flat#terminal');
+    const log = page.getByRole('log', { name: 'Terminal output' });
+    await expect(log).toContainText('READY', { timeout: 10_000 });
+    const input = page.getByRole('textbox', { name: 'Terminal command' });
+    await input.fill('life');
+    await input.press('Enter');
+    await expect(log).toContainText('// LIFE // GEN');
+    await input.press('x');
+    await expect(log).toContainText('generations. B3/S23.');
+    await expect(input).toHaveValue('');
+  });
+
   test('boots instantly under reduced motion', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
