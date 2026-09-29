@@ -53,6 +53,17 @@ function shadowTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(c);
 }
 
+function isSoftwareRenderer(renderer: THREE.WebGLRenderer): boolean {
+  try {
+    const gl = renderer.getContext();
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
+    return /swiftshader|llvmpipe|software/i.test(name);
+  } catch {
+    return false;
+  }
+}
+
 export class HeroScene {
   readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
@@ -69,6 +80,9 @@ export class HeroScene {
   private dirty = true;
   private visible = true;
   private raf = 0;
+  private lastLive = 0;
+  /** Minimum ms between frames when only the CRT flicker is animating. */
+  private idleFrameMs = 1000 / 30;
   private holdPose: Pose = { pos: new THREE.Vector3(), target: SCREEN.center.clone() };
 
   private wide: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
@@ -104,6 +118,11 @@ export class HeroScene {
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // software WebGL (SwiftShader, llvmpipe) renders on the CPU: go easy on it
+    if (isSoftwareRenderer(this.renderer)) {
+      this.renderer.setPixelRatio(1);
+      this.idleFrameMs = 1000 / 15;
+    }
     this.renderer.setClearColor(VOID);
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -266,7 +285,13 @@ export class HeroScene {
     if (!this.visible) return;
     // the CRT flickers only while it is on and filling the view
     const live = this.power > 0 && this.progress > PHASE.zoomEnd * 0.6 && this.progress < 0.95;
-    if (!this.dirty && !live) return;
+    if (!this.dirty) {
+      // nothing moved: only the flicker is animating, which doesn't need 60fps
+      if (!live) return;
+      const now = performance.now();
+      if (now - this.lastLive < this.idleFrameMs) return;
+      this.lastLive = now;
+    }
     this.crt.uniforms.uTime!.value = (performance.now() - this.startedAt) / 1000;
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
