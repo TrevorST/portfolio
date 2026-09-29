@@ -98,7 +98,6 @@ export default function Terminal({ data }: { data: SiteData }) {
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (snap.busy) return;
       const line = input;
       setInput('');
       void engine.execute(line);

@@ -84,6 +84,41 @@ describe('TerminalEngine', () => {
     expect(text().match(/READY/g)).toHaveLength(1);
   });
 
+  it('queues input typed during boot instead of dropping it', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const host: TerminalHost = { navigate: vi.fn(), sleep: () => gate, now: () => new Date() };
+    const term = new TerminalEngine({ data, commands, host });
+    const booting = term.boot();
+    const typed = term.execute('open circleflow');
+    expect(term.getSnapshot().busy).toBe(true);
+    expect(host.navigate).not.toHaveBeenCalled();
+    release();
+    await Promise.all([booting, typed]);
+    expect(host.navigate).toHaveBeenCalledWith('/projects/circleflow');
+    const lines = term.getSnapshot().lines.map((l) => l.text);
+    // the command runs after the boot log, not in the middle of it
+    expect(lines.indexOf('// READY //')).toBeLessThan(
+      lines.findIndex((l) => l.endsWith('open circleflow')),
+    );
+    expect(term.getSnapshot().busy).toBe(false);
+  });
+
+  it('keeps running after a command throws', async () => {
+    const boom: Command = {
+      name: 'boom',
+      summary: 'x',
+      run() {
+        throw new Error('kaboom');
+      },
+    };
+    const { term, text } = setup([boom]);
+    await term.execute('boom');
+    await term.execute('pwd');
+    expect(text()).toContain('boom: kaboom');
+    expect(term.getSnapshot().lines.at(-1)?.text).toBe('/home/trevor');
+  });
+
   it('echoes input with the prompt and reports unknown commands', async () => {
     const { term, text } = setup();
     await term.execute('nope');
