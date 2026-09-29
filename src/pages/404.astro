@@ -1,0 +1,46 @@
+---
+import Base from '~/layouts/Base.astro';
+import Frame from '~/components/Frame.astro';
+---
+
+<Base title="404" description="Nothing at this address.">
+  <div class="lost">
+    <Frame variant="flare" corners="tri">
+      <h1>
+        404.0x
+        <br />
+        Lost.
+      </h1>
+      <p class="sub">
+        *cd: no such file or directory. <a href="/">(cd ~)</a>
+      </p>
+    </Frame>
+    <div class="term mono">
+      <span class="sig">guest@trv:~$</span> ls /that-page
+      <br />
+      <span class="err">ls: cannot access '/that-page': no such file or directory</span>
+      <br />
+      <span class="sig">guest@trv:~$</span> <a href="/">cd ~</a> ·{' '}
+      <a href="/projects">ls projects</a> · <a href="/blog">ls posts</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .lost {
+    display: grid;
+    gap: 24px;
+    padding-top: 64px;
+  }
+  .term {
+    background: #050606;
+    border: 1px solid var(--line);
+    padding: 18px;
+    line-height: 2;
+    text-transform: none;
+    overflow-wrap: anywhere;
+  }
+  .err {
+    color: var(--flare);
+  }
+</style>

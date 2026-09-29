@@ -1,0 +1,70 @@
+---
+import { build, site } from '~/site.config';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) =>
+  !href.includes('#') && (path === href || path.startsWith(`${href}/`));
+---
+
+<header class="bar mono">
+  <div class="bar-inner">
+    <a href="/" class="brand">
+      <span class="sig">TRV.SYS</span>
+      <span class="sr-only"> home</span>
+      <span class="dim">/ {build.version}</span>
+      <span class="blink" aria-hidden="true"></span>
+    </a>
+    <nav aria-label="Primary">
+      {site.nav.map((item) => (
+        <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<style>
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--void) 88%, transparent);
+    backdrop-filter: blur(6px);
+    view-transition-name: topbar;
+  }
+  .bar-inner {
+    max-width: var(--max);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    min-height: var(--bar-h);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+    padding-block: 8px;
+  }
+  .brand {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  nav {
+    display: flex;
+    gap: 4px 18px;
+    flex-wrap: wrap;
+  }
+  nav a {
+    color: var(--dim);
+    text-decoration: none;
+    padding-block: 6px;
+  }
+  nav a:hover,
+  nav a[aria-current='page'] {
+    color: var(--signal);
+  }
+  nav a[aria-current='page']::before {
+    content: '▸ ';
+  }
+</style>

@@ -1,0 +1,11 @@
+dist
+.astro
+node_modules
+oldwebsitecopy
+package-lock.json
+CHANGELOG.md
+doc/design/style-bible.html
+.lighthouseci
+playwright-report
+test-results
+doc

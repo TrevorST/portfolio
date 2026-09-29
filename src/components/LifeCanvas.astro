@@ -1,0 +1,116 @@
+---
+/**
+ * Conway's Game of Life, dithered in signal green (style bible T.04: the
+ * decoration is itself computation). Pauses off-screen and when the tab is
+ * hidden; draws one still frame under prefers-reduced-motion.
+ */
+---
+
+<canvas class="life" aria-hidden="true" data-life></canvas>
+
+<style>
+  .life {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.55;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+</style>
+
+<script>
+  const CELL = 8;
+  const TICK_MS = 140;
+  const SIGNAL = '#C6FF1A';
+
+  for (const cv of document.querySelectorAll<HTMLCanvasElement>('canvas[data-life]')) {
+    const ctx = cv.getContext('2d');
+    if (!ctx) continue;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let cols = 0;
+    let rows = 0;
+    let grid = new Uint8Array(0);
+
+    const seed = () => {
+      const r = cv.getBoundingClientRect();
+      cols = Math.max(10, Math.floor(r.width / CELL));
+      rows = Math.max(10, Math.floor(r.height / CELL));
+      cv.width = cols * CELL;
+      cv.height = rows * CELL;
+      grid = new Uint8Array(cols * rows);
+      for (let i = 0; i < grid.length; i++) grid[i] = Math.random() < 0.16 ? 1 : 0;
+    };
+
+    const step = () => {
+      const next = new Uint8Array(cols * rows);
+      let alive = 0;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          let n = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dx || dy)
+                n += grid[((y + dy + rows) % rows) * cols + ((x + dx + cols) % cols)] ?? 0;
+            }
+          }
+          const i = y * cols + x;
+          const v = n === 3 || (n === 2 && grid[i]) ? 1 : 0;
+          next[i] = v;
+          alive += v;
+        }
+      }
+      grid = next;
+      if (alive < cols * rows * 0.02) seed();
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      for (let y = 0; y < rows; y++) {
+        const fade = 1 - y / rows;
+        for (let x = 0; x < cols; x++) {
+          if (!grid[y * cols + x]) continue;
+          ctx.fillStyle = (x + y) % 7 === 0 ? SIGNAL : `rgba(198,255,26,${0.12 + 0.35 * fade})`;
+          // checkerboard dither inside each cell
+          for (let py = 0; py < CELL - 2; py += 2) {
+            for (let px = (py / 2) % 2; px < CELL - 2; px += 2)
+              ctx.fillRect(x * CELL + px, y * CELL + py, 1, 1);
+          }
+        }
+      }
+    };
+
+    seed();
+    draw();
+
+    if (!reduce) {
+      let visible = true;
+      let timer: number | undefined;
+      const run = () => {
+        clearInterval(timer);
+        if (visible && !document.hidden) {
+          timer = window.setInterval(() => {
+            step();
+            draw();
+          }, TICK_MS);
+        }
+      };
+      new IntersectionObserver(([entry]) => {
+        visible = entry?.isIntersecting ?? false;
+        run();
+      }).observe(cv);
+      document.addEventListener('visibilitychange', run);
+      run();
+    }
+
+    let resizeTimer: number | undefined;
+    new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        seed();
+        draw();
+      }, 200);
+    }).observe(cv);
+  }
+</script>

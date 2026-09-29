@@ -1,0 +1,23 @@
+---
+import Base from '~/layouts/Base.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import PostList from '~/components/PostList.astro';
+import { getPosts } from '~/lib/content';
+
+const posts = await getPosts();
+---
+
+<Base title="Writing" description="Notes on building things: tools, pipelines, and this site.">
+  <section class="section">
+    <SectionHead
+      idx="W"
+      title="Writing"
+      level={1}
+      meta={`${String(posts.length).padStart(2, '0')} POSTS · RSS`}
+    />
+    <p class="lede">
+      Notes on building things. Also available as <a href="/rss.xml">RSS</a>.
+    </p>
+    <PostList posts={posts} />
+  </section>
+</Base>

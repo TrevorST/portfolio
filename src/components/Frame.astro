@@ -1,0 +1,136 @@
+---
+/**
+ * Frame header (style bible #kit): four corner marks, a huge tight headline and
+ * a mono footnote. One per screen. `flood` at most once per page; `flare` is for
+ * error pages only.
+ */
+interface Props {
+  variant?: 'bare' | 'panelled' | 'flood' | 'flare';
+  corners?: 'bracket' | 'tri';
+  as?: 'header' | 'section' | 'div';
+  class?: string;
+}
+const { variant = 'bare', corners = 'bracket', as: El = 'header', class: className } = Astro.props;
+---
+
+<El class:list={['frame', variant, className]} data-corners={corners}>
+  <span class="c tl" aria-hidden="true"></span>
+  <span class="c tr" aria-hidden="true"></span>
+  <span class="c bl" aria-hidden="true"></span>
+  <span class="c br" aria-hidden="true"></span>
+  <slot />
+</El>
+
+<style>
+  .frame {
+    --fc: var(--signal);
+    --ft: var(--bone);
+    --fs: var(--dim);
+    --fb: transparent;
+    position: relative;
+    background: var(--fb);
+    color: var(--ft);
+    padding: clamp(28px, 5vw, 56px) clamp(20px, 6vw, 72px);
+    display: grid;
+    gap: clamp(14px, 2vw, 22px);
+    min-width: 0;
+  }
+  .c {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 0 solid var(--fc);
+    pointer-events: none;
+  }
+  .tl {
+    top: 14px;
+    left: 14px;
+    border-top-width: 1.5px;
+    border-left-width: 1.5px;
+  }
+  .tr {
+    top: 14px;
+    right: 14px;
+    border-top-width: 1.5px;
+    border-right-width: 1.5px;
+  }
+  .bl {
+    bottom: 14px;
+    left: 14px;
+    border-bottom-width: 1.5px;
+    border-left-width: 1.5px;
+  }
+  .br {
+    bottom: 14px;
+    right: 14px;
+    border-bottom-width: 1.5px;
+    border-right-width: 1.5px;
+  }
+  [data-corners='tri'] .c {
+    width: 0;
+    height: 0;
+    border: 0;
+  }
+  [data-corners='tri'] .tl {
+    border-top: 9px solid var(--fc);
+    border-right: 9px solid transparent;
+  }
+  [data-corners='tri'] .tr {
+    border-top: 9px solid var(--fc);
+    border-left: 9px solid transparent;
+  }
+  [data-corners='tri'] .bl {
+    border-bottom: 9px solid var(--fc);
+    border-right: 9px solid transparent;
+  }
+  [data-corners='tri'] .br {
+    border-bottom: 9px solid var(--fc);
+    border-left: 9px solid transparent;
+  }
+  .frame :global(:is(h1, h2, h3)) {
+    font-family: var(--f-display);
+    text-transform: none;
+    font-weight: 700;
+    font-variation-settings: 'wdth' 100;
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+    font-size: clamp(2.6rem, 9vw, 7.5rem);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .frame :global(.sub) {
+    font-family: var(--f-mono);
+    font-size: var(--s-xs);
+    letter-spacing: 0.02em;
+    color: var(--fs);
+    font-variation-settings: 'wdth' 87.5;
+    max-width: 60ch;
+  }
+  .frame :global(.sub a) {
+    color: inherit;
+    text-underline-offset: 4px;
+  }
+  .frame :global(.sub a:hover) {
+    color: var(--fc);
+  }
+  .flood {
+    --fb: var(--signal);
+    --ft: var(--void);
+    --fs: #2b3a05;
+    --fc: var(--void);
+  }
+  .flood :global(::selection) {
+    background: var(--void);
+    color: var(--signal);
+  }
+  .flare {
+    --fb: var(--flare);
+    --ft: #2a1216;
+    --fs: #4a1e26;
+    --fc: #2a1216;
+  }
+  .panelled {
+    --fb: var(--carbon);
+    border: 1px solid var(--line);
+  }
+</style>
