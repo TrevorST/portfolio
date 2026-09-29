@@ -7,6 +7,7 @@ import Frame from '~/components/Frame.astro';
 import Tag from '~/components/Tag.astro';
 import { getProjects, projectUrl, type Project } from '~/lib/content';
 import '~/styles/prose.css';
+import { trackAttrs } from '~/lib/analytics';
 
 export const getStaticPaths = (async () => {
   const projects = await getProjects();
@@ -62,17 +63,29 @@ const live = status === 'live' || status === 'active';
       </dl>
       <div class="links">
         {links.live && (
-          <a class="btn" href={links.live}>
+          <a
+            class="btn"
+            href={links.live}
+            {...trackAttrs('project-link', { project: project.id, kind: 'live' })}
+          >
             Live ▸
           </a>
         )}
         {links.demo && (
-          <a class="btn" href={links.demo}>
+          <a
+            class="btn"
+            href={links.demo}
+            {...trackAttrs('project-link', { project: project.id, kind: 'demo' })}
+          >
             Demo ▸
           </a>
         )}
         {links.repo && (
-          <a class="btn ghost" href={links.repo}>
+          <a
+            class="btn ghost"
+            href={links.repo}
+            {...trackAttrs('project-link', { project: project.id, kind: 'repo' })}
+          >
             Source
           </a>
         )}

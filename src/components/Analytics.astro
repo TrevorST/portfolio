@@ -1,0 +1,27 @@
+---
+/**
+ * The only place a tracker is added to the page. Swap providers here (and in
+ * vercel.json's /stats rewrites); events go through src/lib/analytics.ts.
+ *
+ * Loads only when a website ID is set AND this is a Vercel production build.
+ * Previews, local builds and CI (including the Lighthouse budget) never get it.
+ * ANALYTICS_FORCE=1 overrides the environment check for testing.
+ */
+import { analytics } from '~/site.config';
+
+const enabled =
+  analytics.websiteId !== '' &&
+  (process.env.VERCEL_ENV === 'production' || process.env.ANALYTICS_FORCE === '1');
+---
+
+{enabled && (
+  <script
+    is:inline
+    defer
+    data-analytics
+    src="/stats/script.js"
+    data-website-id={analytics.websiteId}
+    data-host-url="/stats"
+    data-do-not-track="true"
+  />
+)}

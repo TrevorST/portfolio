@@ -71,6 +71,18 @@ New projects and posts show up in the terminal automatically (`ls projects`, `op
 
 Drop a file in [`src/terminal/commands/`](src/terminal/commands) that default-exports a `Command` (or an array of them). Set `hidden: true` for an easter egg; it runs but never appears in `help` or tab completion. The engine is pure TypeScript with no DOM, tested in [`src/terminal/engine.test.ts`](src/terminal/engine.test.ts).
 
+## Analytics
+
+[Umami](https://umami.is) Cloud: cookieless, no personal data, no consent banner, respects Do Not Track.
+
+- **Enable:** put the website ID in `analytics.websiteId` in [`src/site.config.ts`](src/site.config.ts). Empty means off.
+- **Where it runs:** only on Vercel production builds. Previews, local builds and CI never load it. The script and collector are proxied through `/stats` (rewrites in `vercel.json`), so they're first-party.
+- **Events:** every event and its data shape is declared in [`src/lib/analytics.ts`](src/lib/analytics.ts). Use `track(event, data)` in scripts, or spread `trackAttrs(event, data)` onto a link for click tracking. The terminal reports command names only, never what was typed after them.
+
+## Roadmap
+
+See [`doc/ROADMAP.md`](doc/ROADMAP.md).
+
 ## Develop
 
 Node 22.12 or newer (`.nvmrc`).

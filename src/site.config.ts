@@ -77,4 +77,16 @@ export const site = {
   ],
 } as const;
 
+/**
+ * Umami analytics. Both values are public (they ship in the page), not
+ * secrets. Leave `websiteId` empty to disable. The script only loads on
+ * Vercel production builds, never on previews or locally, and is proxied
+ * through /stats (see vercel.json) so it is first-party.
+ */
+export const analytics = {
+  websiteId: '',
+  /** Umami Cloud. Must match the rewrite destinations in vercel.json. */
+  host: 'https://cloud.umami.is',
+};
+
 export const build = __BUILD__;

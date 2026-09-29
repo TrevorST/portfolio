@@ -87,6 +87,11 @@ const subline = [site.role, current?.data.org, current?.data.location].filter(Bo
   </div>
 </Base>
 
+<script>
+  import { track } from '~/lib/analytics';
+  track('resume-view', { source: 'page' });
+</script>
+
 <style>
   .about-page {
     display: grid;

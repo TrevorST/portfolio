@@ -43,6 +43,17 @@ for (const path of PAGES) {
   });
 }
 
+test('non-production builds never load analytics', async ({ page }) => {
+  const stats: string[] = [];
+  page.on('request', (req) => {
+    if (/\/stats\/|umami/.test(req.url())) stats.push(req.url());
+  });
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('script[data-analytics]')).toHaveCount(0);
+  expect(stats).toEqual([]);
+});
+
 test('unknown routes get the 404 page', async ({ page }) => {
   const res = await page.goto('/definitely-not-a-page');
   expect(res?.status()).toBe(404);
