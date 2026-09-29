@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/TrevorST/portfolio/compare/v0.1.0...v0.2.0) (2026-09-29)
+
+
+### Features
+
+* privacy-first analytics with typed events ([#17](https://github.com/TrevorST/portfolio/issues/17)) ([7e4be03](https://github.com/TrevorST/portfolio/commit/7e4be031a611c5077d5bd5837f12720e5de1bb35))
+
+
+### Fixes
+
+* queue terminal input during boot, and clean canonical and RSS URLs ([#16](https://github.com/TrevorST/portfolio/issues/16)) ([fbaf2b8](https://github.com/TrevorST/portfolio/commit/fbaf2b8e30fd677a399c286b86fa83f9981b1545))
+
 ## 0.1.0 (2026-09-29)
 
 
