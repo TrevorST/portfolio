@@ -5,9 +5,11 @@ const whoami: Command = {
   summary: 'Who built this machine',
   aliases: ['about'],
   run({ data, print }) {
+    const now = data.experience[0];
     print(data.name.toUpperCase(), 'accent');
-    print(data.role, 'dim');
+    print(now ? `${now.role} · ${now.org}` : data.role, 'dim');
     print(data.bio);
+    print("'resume' for experience, education and skills.", 'dim');
   },
 };
 
