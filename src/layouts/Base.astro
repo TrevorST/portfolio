@@ -12,7 +12,10 @@ interface Props {
 }
 const { title, description = site.description, type = 'website' } = Astro.props;
 const fullTitle = title ? `${title} // ${site.name}` : `${site.name} // Software engineer`;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+// Pages build as files (about.html), but Vercel serves clean URLs (/about),
+// so strip the extension and a trailing index for the canonical form.
+const cleanPath = Astro.url.pathname.replace(/(\/index)?\.html$/, '') || '/';
+const canonical = new URL(cleanPath, Astro.site);
 ---
 
 <!doctype html>
