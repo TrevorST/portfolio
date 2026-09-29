@@ -1,12 +1,58 @@
 ---
 /**
- * Conway's Game of Life, dithered in signal green (style bible T.04: the
- * decoration is itself computation). Pauses off-screen and when the tab is
- * hidden; draws one still frame under prefers-reduced-motion.
+ * Conway's Game of Life, drawn as a checkerboard dither (style bible T.04: the
+ * decoration is itself computation). Drop it into any positioned container.
+ *
+ * Perf guards: pauses off-screen and when the tab is hidden, steps on a
+ * throttled timer (not every frame), and draws one still frame under
+ * prefers-reduced-motion. `interactive` seeds gliders near the pointer or a
+ * touch, listening on the parent element (the canvas never takes clicks).
  */
+interface Props {
+  /** Cell colour as "r,g,b" (drawn with varying alpha). Default: signal green. */
+  rgb?: string;
+  /** Share of cells alive at seed, 0..1. */
+  density?: number;
+  /** Whole-canvas opacity. */
+  opacity?: number;
+  /** Fade cells towards the bottom edge. */
+  fade?: boolean;
+  /** Pointer and touch seed gliders. */
+  interactive?: boolean;
+  /** Cell size in CSS px. */
+  cell?: number;
+  /** Milliseconds per generation. */
+  tick?: number;
+  /** One cell in seven drawn at full strength. */
+  accents?: boolean;
+  class?: string;
+}
+const {
+  rgb = '198,255,26',
+  density = 0.16,
+  opacity = 0.55,
+  fade = true,
+  interactive = false,
+  cell = 8,
+  tick = 140,
+  accents = true,
+  class: className,
+} = Astro.props;
 ---
 
-<canvas class="life" aria-hidden="true" data-life></canvas>
+<canvas
+  class:list={['life', className]}
+  aria-hidden="true"
+  data-life
+  data-rgb={rgb}
+  data-density={density}
+  data-fade={fade ? '1' : '0'}
+  data-interactive={interactive ? '1' : '0'}
+  data-cell={cell}
+  data-tick={tick}
+  data-accents={accents ? '1' : '0'}
+  style={`opacity:${opacity}`}
+></canvas>
 
 <style>
   .life {
@@ -14,64 +60,44 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    opacity: 0.55;
     pointer-events: none;
     image-rendering: pixelated;
   }
 </style>
 
 <script>
-  const CELL = 8;
-  const TICK_MS = 140;
-  const SIGNAL = '#C6FF1A';
+  import { Life } from '~/lib/life';
 
   for (const cv of document.querySelectorAll<HTMLCanvasElement>('canvas[data-life]')) {
     const ctx = cv.getContext('2d');
     if (!ctx) continue;
+    const d = cv.dataset;
+    const CELL = Number(d.cell) || 8;
+    const TICK = Number(d.tick) || 140;
+    const RGB = d.rgb ?? '198,255,26';
+    const DENSITY = Number(d.density) || 0.16;
+    const FADE = d.fade === '1';
+    const ACCENTS = d.accents === '1';
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let cols = 0;
-    let rows = 0;
-    let grid = new Uint8Array(0);
+    let life = new Life(10, 10);
 
     const seed = () => {
       const r = cv.getBoundingClientRect();
-      cols = Math.max(10, Math.floor(r.width / CELL));
-      rows = Math.max(10, Math.floor(r.height / CELL));
+      const cols = Math.max(10, Math.floor(r.width / CELL));
+      const rows = Math.max(10, Math.floor(r.height / CELL));
       cv.width = cols * CELL;
       cv.height = rows * CELL;
-      grid = new Uint8Array(cols * rows);
-      for (let i = 0; i < grid.length; i++) grid[i] = Math.random() < 0.16 ? 1 : 0;
-    };
-
-    const step = () => {
-      const next = new Uint8Array(cols * rows);
-      let alive = 0;
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          let n = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              if (dx || dy)
-                n += grid[((y + dy + rows) % rows) * cols + ((x + dx + cols) % cols)] ?? 0;
-            }
-          }
-          const i = y * cols + x;
-          const v = n === 3 || (n === 2 && grid[i]) ? 1 : 0;
-          next[i] = v;
-          alive += v;
-        }
-      }
-      grid = next;
-      if (alive < cols * rows * 0.02) seed();
+      life = new Life(cols, rows).seed(DENSITY);
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, cv.width, cv.height);
+      const { cols, rows } = life;
       for (let y = 0; y < rows; y++) {
-        const fade = 1 - y / rows;
+        const alpha = FADE ? 0.12 + 0.35 * (1 - y / rows) : 0.5;
         for (let x = 0; x < cols; x++) {
-          if (!grid[y * cols + x]) continue;
-          ctx.fillStyle = (x + y) % 7 === 0 ? SIGNAL : `rgba(198,255,26,${0.12 + 0.35 * fade})`;
+          if (!life.get(x, y)) continue;
+          ctx.fillStyle = ACCENTS && (x + y) % 7 === 0 ? `rgb(${RGB})` : `rgba(${RGB},${alpha})`;
           // checkerboard dither inside each cell
           for (let py = 0; py < CELL - 2; py += 2) {
             for (let px = (py / 2) % 2; px < CELL - 2; px += 2)
@@ -81,27 +107,51 @@
       }
     };
 
+    const step = () => {
+      if (life.step() < life.cols * life.rows * 0.02) seed();
+      draw();
+    };
+
     seed();
     draw();
 
     if (!reduce) {
-      let visible = true;
+      let visible = false;
       let timer: number | undefined;
       const run = () => {
         clearInterval(timer);
-        if (visible && !document.hidden) {
-          timer = window.setInterval(() => {
-            step();
-            draw();
-          }, TICK_MS);
-        }
+        if (visible && !document.hidden) timer = window.setInterval(step, TICK);
       };
       new IntersectionObserver(([entry]) => {
         visible = entry?.isIntersecting ?? false;
         run();
       }).observe(cv);
       document.addEventListener('visibilitychange', run);
-      run();
+
+      if (d.interactive === '1' && cv.parentElement) {
+        let last = 0;
+        const plant = (clientX: number, clientY: number) => {
+          const now = performance.now();
+          if (now - last < 90) return; // a trail of gliders, not a flood
+          last = now;
+          const r = cv.getBoundingClientRect();
+          const x = Math.floor(((clientX - r.left) / r.width) * life.cols);
+          const y = Math.floor(((clientY - r.top) / r.height) * life.rows);
+          life.glider(x - 1, y - 1);
+          draw();
+        };
+        cv.parentElement.addEventListener('pointermove', (e) => plant(e.clientX, e.clientY), {
+          passive: true,
+        });
+        cv.parentElement.addEventListener(
+          'touchmove',
+          (e) => {
+            const t = e.touches[0];
+            if (t) plant(t.clientX, t.clientY);
+          },
+          { passive: true },
+        );
+      }
     }
 
     let resizeTimer: number | undefined;

@@ -54,6 +54,8 @@ export class TerminalEngine {
   private nextId = 1;
   private cwd = HOME;
   private busy = false;
+  private screen: readonly string[] | null = null;
+  private running: AbortController | null = null;
   private bootQueued = false;
   private pending = 0;
   private tail: Promise<void> = Promise.resolve();
@@ -101,6 +103,7 @@ export class TerminalEngine {
       prompt: `guest@trv:${this.fs.pretty(this.cwd)}$`,
       busy: this.busy,
       booted: this.booted,
+      screen: this.screen,
     };
   }
 
@@ -223,14 +226,37 @@ export class TerminalEngine {
       this.print(`${name}: command not found. Try 'help'.`, 'error');
       return;
     }
+    const running = new AbortController();
+    this.running = running;
     try {
-      await cmd.run(this.context(args, line));
+      await cmd.run(this.context(args, line, running.signal));
     } catch (err) {
       this.print(`${name}: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    } finally {
+      if (this.running === running) this.running = null;
+      if (this.screen) {
+        // a command never leaves the screen taken over behind it
+        this.screen = null;
+        this.emit();
+      }
     }
   }
 
-  private context(args: readonly string[], raw: string): CommandContext {
+  /**
+   * Interrupt the running command if it owns the full screen (any key does
+   * this, like quitting `top`). Returns true when something was interrupted.
+   */
+  interrupt(): boolean {
+    if (!this.screen || !this.running) return false;
+    this.running.abort();
+    return true;
+  }
+
+  private context(
+    args: readonly string[],
+    raw: string,
+    signal: AbortSignal = new AbortController().signal,
+  ): CommandContext {
     return {
       args,
       raw,
@@ -248,6 +274,11 @@ export class TerminalEngine {
         this.emit();
       },
       exec: (next) => this.dispatch(next),
+      setScreen: (lines) => {
+        this.screen = lines;
+        this.emit();
+      },
+      signal,
     };
   }
 

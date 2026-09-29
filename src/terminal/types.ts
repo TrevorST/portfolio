@@ -82,6 +82,11 @@ export interface Snapshot {
   readonly prompt: string;
   readonly busy: boolean;
   readonly booted: boolean;
+  /**
+   * Full-screen output (like `top` or `less`) that replaces the scrollback
+   * while a command owns the screen. Renderers draw it monospaced. null = none.
+   */
+  readonly screen: readonly string[] | null;
 }
 
 export interface CommandContext {
@@ -99,6 +104,10 @@ export interface CommandContext {
   setCwd(path: string): void;
   /** Run another command line as if typed (without echoing it). */
   exec(line: string): Promise<void>;
+  /** Take over the whole screen (null to give it back). */
+  setScreen(lines: readonly string[] | null): void;
+  /** Aborted when the visitor interrupts (any key while a full-screen command runs). */
+  readonly signal: AbortSignal;
 }
 
 export interface Command {
