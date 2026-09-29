@@ -60,9 +60,9 @@ test('unknown routes get the 404 page', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Lost');
 });
 
-test.describe('terminal', () => {
+test.describe('flat terminal', () => {
   test('boots and runs commands', async ({ page }) => {
-    await page.goto('/#terminal');
+    await page.goto('/?flat#terminal');
     const log = page.getByRole('log', { name: 'Terminal output' });
     await expect(log).toContainText('// READY //');
 
@@ -79,7 +79,7 @@ test.describe('terminal', () => {
   });
 
   test('open navigates to a project page', async ({ page }) => {
-    await page.goto('/#terminal');
+    await page.goto('/?flat#terminal');
     await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY');
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.fill('open circleflow');
@@ -94,6 +94,71 @@ test.describe('terminal', () => {
     await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY', {
       timeout: 1500,
     });
+    await context.close();
+  });
+});
+
+test.describe('3D hero', () => {
+  /** Scroll the pinned hero to a fraction of its travel (0 = top, 0.5 = mid-hold). */
+  const scrollHero = (page: Page, p: number) =>
+    page.evaluate((p) => {
+      const r = document.querySelector<HTMLElement>('[data-hero-root]')!;
+      window.scrollTo({
+        top: r.offsetTop + (r.offsetHeight - innerHeight) * p,
+        behavior: 'instant',
+      });
+    }, p);
+
+  test('three.js loads only after the visitor interacts', async ({ page }) => {
+    const heavy: string[] = [];
+    page.on('request', (req) => {
+      if (/stage3d/.test(req.url())) heavy.push(req.url());
+    });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('html')).toHaveAttribute('data-hero', '3d');
+    expect(heavy).toEqual([]);
+    await scrollHero(page, 0.05);
+    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '');
+    expect(heavy.length).toBeGreaterThan(0);
+  });
+
+  test('powers on in the hold and runs commands typed on the screen', async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto('/');
+    await scrollHero(page, 0.05);
+    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '');
+    await scrollHero(page, 0.5);
+    const hero = page.locator('[data-hero-root]');
+    await expect(hero).toHaveAttribute('data-hold', '');
+    await expect(hero).toHaveAttribute('data-powered', '');
+    const log = page.getByRole('log', { name: 'Terminal output' });
+    await expect(log).toContainText('// READY //');
+
+    const input = page.getByRole('textbox', { name: 'Terminal command' });
+    await input.focus();
+    await page.keyboard.type('help');
+    await page.keyboard.press('Enter');
+    await expect(log).toContainText('// COMMANDS //');
+
+    // the input sits over the rendered screen
+    const box = await input.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box!.width).toBeGreaterThan(viewport.width * 0.5);
+
+    // scrolling past the hold releases the terminal
+    await scrollHero(page, 0.95);
+    await expect(hero).not.toHaveAttribute('data-hold', '');
+    await expect(input).not.toBeFocused();
+    expect(errors).toEqual([]);
+  });
+
+  test('?flat and reduced motion use the flat terminal', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-hero', 'flat');
+    await expect(page.locator('[data-hero-canvas]')).toBeHidden();
     await context.close();
   });
 });
