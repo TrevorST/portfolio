@@ -2,7 +2,7 @@
 
 Trevor Taylor's portfolio. Astro, Markdown content in git, and a terminal you can type into.
 
-**Stack:** Astro (static) · TypeScript · React islands (flat terminal) · three.js (3D hero, in progress) · Umami analytics (cookieless) · Vercel · GitHub Actions.
+**Stack:** Astro (static) · TypeScript · React islands (flat terminal) · three.js (3D hero, loaded on first interaction) · Umami analytics (cookieless) · Vercel · GitHub Actions.
 
 Design: **Signal**, graphic retro futurism for code. See [`doc/design/design-principles.md`](doc/design/design-principles.md) and open [`doc/design/style-bible.html`](doc/design/style-bible.html) in a browser.
 
