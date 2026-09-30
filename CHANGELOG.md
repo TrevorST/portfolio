@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/TrevorST/portfolio/compare/v0.2.0...v0.2.1) (2026-09-29)
+
+
+### Fixes
+
+* turn on Umami analytics, add a privacy note, drop stray asterisks ([#19](https://github.com/TrevorST/portfolio/issues/19)) ([831e527](https://github.com/TrevorST/portfolio/commit/831e5274b2b2e3d70ff77ccdfffc300d36ac3364))
+
 ## [0.2.0](https://github.com/TrevorST/portfolio/compare/v0.1.0...v0.2.0) (2026-09-29)
 
 
