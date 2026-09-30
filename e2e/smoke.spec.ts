@@ -65,6 +65,8 @@ test.describe('flat terminal', () => {
   test('boots and runs commands', async ({ page }) => {
     await page.goto('/?flat#terminal');
     const log = page.getByRole('log', { name: 'Terminal output' });
+    // fonts can shift layout after the #terminal jump; the boot waits for visibility
+    await log.scrollIntoViewIfNeeded();
     // the boot animates for ~0.7s; CI runners can be much slower
     await expect(log).toContainText('// READY //', { timeout: 10_000 });
 
@@ -82,6 +84,7 @@ test.describe('flat terminal', () => {
 
   test('open navigates to a project page', async ({ page }) => {
     await page.goto('/?flat#terminal');
+    await page.getByRole('log', { name: 'Terminal output' }).scrollIntoViewIfNeeded();
     await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY', {
       timeout: 10_000,
     });
@@ -89,6 +92,21 @@ test.describe('flat terminal', () => {
     await input.fill('open circleflow');
     await input.press('Enter');
     await expect(page).toHaveURL(/\/projects\/circleflow$/);
+  });
+
+  test('hidden life command plays until a key is pressed', async ({ page }) => {
+    await page.goto('/?flat#terminal');
+    const log = page.getByRole('log', { name: 'Terminal output' });
+    // fonts can shift layout after the #terminal jump; the boot waits for visibility
+    await log.scrollIntoViewIfNeeded();
+    await expect(log).toContainText('READY', { timeout: 10_000 });
+    const input = page.getByRole('textbox', { name: 'Terminal command' });
+    await input.fill('life');
+    await input.press('Enter');
+    await expect(log).toContainText('// LIFE // GEN');
+    await input.press('x');
+    await expect(log).toContainText('generations. B3/S23.');
+    await expect(input).toHaveValue('');
   });
 
   test('boots instantly under reduced motion', async ({ browser }) => {

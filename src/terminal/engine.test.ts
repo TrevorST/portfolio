@@ -260,4 +260,39 @@ describe('TerminalEngine', () => {
     await term.execute('whoami');
     expect(text()).toContain('Software Developer · Acme');
   });
+
+  it('life takes over the screen until interrupted, then hands it back', async () => {
+    const onCommand = vi.fn();
+    const ticks: (() => void)[] = [];
+    const host: TerminalHost = {
+      navigate: vi.fn(),
+      // each frame waits on a tick we release by hand
+      sleep: () => new Promise<void>((r) => ticks.push(r)),
+      now: () => new Date(),
+      onCommand,
+    };
+    const term = new TerminalEngine({ data, commands, host });
+    const running = term.execute('life');
+    await vi.waitFor(() => expect(term.getSnapshot().screen).not.toBeNull());
+    const first = term.getSnapshot().screen!;
+    expect(first.at(-1)).toContain('LIFE // GEN 0000');
+    ticks.shift()!();
+    await vi.waitFor(() => expect(term.getSnapshot().screen!.at(-1)).toContain('GEN 0001'));
+
+    expect(term.interrupt()).toBe(true);
+    ticks.shift()?.();
+    await running;
+    expect(term.getSnapshot().screen).toBeNull();
+    expect(term.getSnapshot().lines.at(-1)?.text).toContain(' generations. B3/S23.');
+    expect(onCommand).toHaveBeenCalledWith('life', { hidden: true });
+    expect(term.interrupt()).toBe(false); // nothing left to interrupt
+  });
+
+  it('keeps life out of help and completion', async () => {
+    const { term, text } = setup();
+    await term.execute('help');
+    expect(text()).not.toMatch(/^\s+life\s/m);
+    expect(term.complete('lif').candidates).toEqual([]);
+    expect(term.complete('lif').value).toBe('lif');
+  });
 });
