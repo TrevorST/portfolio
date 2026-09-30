@@ -2,7 +2,7 @@
 
 Trevor Taylor's portfolio. Astro, Markdown content in git, and a terminal you can type into.
 
-**Stack:** Astro (static) · TypeScript · React islands (flat terminal) · three.js (3D hero, in progress) · Umami analytics (cookieless) · Vercel · GitHub Actions.
+**Stack:** Astro (static) · TypeScript · React islands (flat terminal) · three.js (3D hero, loaded on first interaction) · Umami analytics (cookieless) · Vercel · GitHub Actions.
 
 Design: **Signal**, graphic retro futurism for code. See [`doc/design/design-principles.md`](doc/design/design-principles.md) and open [`doc/design/style-bible.html`](doc/design/style-bible.html) in a browser.
 
@@ -69,6 +69,10 @@ Frontmatter is validated in [`src/content.config.ts`](src/content.config.ts). A 
 
 New projects and posts show up in the terminal automatically (`ls projects`, `open <slug>`).
 
+## The 3D hero
+
+The home page opens on TRV-01, a computer you scroll into. Its screen runs the same terminal engine. Everything about it is in [`doc/3D-MODEL.md`](doc/3D-MODEL.md), including how to drop in a modelled `.glb` from Blender. Append `?flat` to any URL to see the flat fallback.
+
 ## Add a terminal command
 
 Drop a file in [`src/terminal/commands/`](src/terminal/commands) that default-exports a `Command` (or an array of them). Set `hidden: true` for an easter egg; it runs but never appears in `help` or tab completion. The engine is pure TypeScript with no DOM, tested in [`src/terminal/engine.test.ts`](src/terminal/engine.test.ts).
@@ -113,7 +117,8 @@ src/
   content/          projects and posts (Markdown)
   content.config.ts frontmatter schemas
   terminal/         terminal engine, virtual file system, commands (no DOM)
-  components/       Astro components; terminal/ holds the React renderer
+  components/       Astro components; terminal/ holds the React (flat) renderer
+  hero/             the 3D hero: TRV-01 config, scene, CRT shader, screen renderer
   layouts/          page shell
   pages/            routes
   styles/           design tokens and shared kit (global.css), long-form prose

@@ -52,6 +52,8 @@ const canonical = new URL(cleanPath, Astro.site);
       Skip to content
     </a>
     <TopBar />
+    <!-- full-width content that sits outside the centred column (the home hero) -->
+    <slot name="wide" />
     <main id="main" class="wrap">
       <slot />
     </main>

@@ -61,11 +61,12 @@ test('unknown routes get the 404 page', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Lost');
 });
 
-test.describe('terminal', () => {
+test.describe('flat terminal', () => {
   test('boots and runs commands', async ({ page }) => {
-    await page.goto('/#terminal');
+    await page.goto('/?flat#terminal');
     const log = page.getByRole('log', { name: 'Terminal output' });
-    await expect(log).toContainText('// READY //');
+    // the boot animates for ~0.7s; CI runners can be much slower
+    await expect(log).toContainText('// READY //', { timeout: 10_000 });
 
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.fill('help');
@@ -80,8 +81,10 @@ test.describe('terminal', () => {
   });
 
   test('open navigates to a project page', async ({ page }) => {
-    await page.goto('/#terminal');
-    await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY');
+    await page.goto('/?flat#terminal');
+    await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY', {
+      timeout: 10_000,
+    });
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.fill('open circleflow');
     await input.press('Enter');
@@ -95,6 +98,79 @@ test.describe('terminal', () => {
     await expect(page.getByRole('log', { name: 'Terminal output' })).toContainText('READY', {
       timeout: 1500,
     });
+    await context.close();
+  });
+});
+
+test.describe('3D hero', () => {
+  // software WebGL (SwiftShader) in CI and headless runs manages a few fps
+  test.describe.configure({ timeout: 60_000 });
+
+  /** Scroll the pinned hero to a fraction of its travel (0 = top, 0.5 = mid-hold). */
+  const scrollHero = (page: Page, p: number) =>
+    page.evaluate((p) => {
+      const r = document.querySelector<HTMLElement>('[data-hero-root]')!;
+      window.scrollTo({
+        top: r.offsetTop + (r.offsetHeight - innerHeight) * p,
+        behavior: 'instant',
+      });
+    }, p);
+
+  test('three.js loads only after the visitor interacts', async ({ page }) => {
+    const heavy: string[] = [];
+    page.on('request', (req) => {
+      if (/stage3d/.test(req.url())) heavy.push(req.url());
+    });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('html')).toHaveAttribute('data-hero', '3d');
+    const trigger = await page.locator('[data-hero-root]').getAttribute('data-load-trigger');
+    expect(heavy, `3D loaded early, triggered by: ${trigger}`).toEqual([]);
+    await scrollHero(page, 0.05);
+    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '');
+    expect(heavy.length).toBeGreaterThan(0);
+  });
+
+  test('powers on in the hold and runs commands typed on the screen', async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto('/');
+    await scrollHero(page, 0.05);
+    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '', {
+      timeout: 20_000,
+    });
+    await scrollHero(page, 0.5);
+    const hero = page.locator('[data-hero-root]');
+    // CI renders WebGL on the CPU (SwiftShader), so allow the power-on longer
+    const slow = { timeout: 20_000 };
+    await expect(hero).toHaveAttribute('data-hold', '', slow);
+    await expect(hero).toHaveAttribute('data-powered', '', slow);
+    const log = page.getByRole('log', { name: 'Terminal output' });
+    await expect(log).toContainText('// READY //', slow);
+
+    const input = page.getByRole('textbox', { name: 'Terminal command' });
+    await input.focus();
+    await page.keyboard.type('help');
+    await page.keyboard.press('Enter');
+    await expect(log).toContainText('// COMMANDS //', slow);
+
+    // the input sits over the rendered screen
+    const box = await input.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box!.width).toBeGreaterThan(viewport.width * 0.5);
+
+    // scrolling past the hold releases the terminal
+    await scrollHero(page, 0.95);
+    await expect(hero).not.toHaveAttribute('data-hold', '');
+    await expect(input).not.toBeFocused();
+    expect(errors).toEqual([]);
+  });
+
+  test('?flat and reduced motion use the flat terminal', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-hero', 'flat');
+    await expect(page.locator('[data-hero-canvas]')).toBeHidden();
     await context.close();
   });
 });
