@@ -121,6 +121,9 @@ test.describe('flat terminal', () => {
 });
 
 test.describe('3D hero', () => {
+  // software WebGL (SwiftShader) in CI and headless runs manages a few fps
+  test.describe.configure({ timeout: 60_000 });
+
   /** Scroll the pinned hero to a fraction of its travel (0 = top, 0.5 = mid-hold). */
   const scrollHero = (page: Page, p: number) =>
     page.evaluate((p) => {
@@ -150,19 +153,23 @@ test.describe('3D hero', () => {
     const errors = watchErrors(page);
     await page.goto('/');
     await scrollHero(page, 0.05);
-    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '');
+    await expect(page.locator('[data-hero-root]')).toHaveAttribute('data-ready', '', {
+      timeout: 20_000,
+    });
     await scrollHero(page, 0.5);
     const hero = page.locator('[data-hero-root]');
-    await expect(hero).toHaveAttribute('data-hold', '');
-    await expect(hero).toHaveAttribute('data-powered', '');
+    // CI renders WebGL on the CPU (SwiftShader), so allow the power-on longer
+    const slow = { timeout: 20_000 };
+    await expect(hero).toHaveAttribute('data-hold', '', slow);
+    await expect(hero).toHaveAttribute('data-powered', '', slow);
     const log = page.getByRole('log', { name: 'Terminal output' });
-    await expect(log).toContainText('// READY //');
+    await expect(log).toContainText('// READY //', slow);
 
     const input = page.getByRole('textbox', { name: 'Terminal command' });
     await input.focus();
     await page.keyboard.type('help');
     await page.keyboard.press('Enter');
-    await expect(log).toContainText('// COMMANDS //');
+    await expect(log).toContainText('// COMMANDS //', slow);
 
     // the input sits over the rendered screen
     const box = await input.boundingBox();
