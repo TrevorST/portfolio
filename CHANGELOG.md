@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/TrevorST/portfolio/compare/v0.2.1...v0.3.0) (2026-09-30)
+
+
+### Features
+
+* 3D terminal hero you scroll into ([#21](https://github.com/TrevorST/portfolio/issues/21)) ([4c03785](https://github.com/TrevorST/portfolio/commit/4c03785060d31604ff9a16e7a735c8cd2173d58c))
+* Life behind the Contact panel (option B) ([#23](https://github.com/TrevorST/portfolio/issues/23)) ([d07e64c](https://github.com/TrevorST/portfolio/commit/d07e64c7213a7db3acfcdc1deda226be6f14a9a8))
+
 ## [0.2.1](https://github.com/TrevorST/portfolio/compare/v0.2.0...v0.2.1) (2026-09-29)
 
 
