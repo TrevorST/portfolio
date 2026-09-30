@@ -74,6 +74,17 @@
   padding-bottom: 4px;
 }
 
+/* full-screen output (the `life` easter egg): monospaced so the grid lines up */
+.term-alt {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1.15;
+  white-space: pre;
+  overflow: hidden;
+}
+
 .term-line {
   display: block;
   white-space: pre-wrap;

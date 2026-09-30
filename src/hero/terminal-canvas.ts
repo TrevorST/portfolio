@@ -97,11 +97,34 @@ export class TerminalCanvas {
     return out;
   }
 
+  /** Full-screen output (the `life` easter egg): monospaced, scaled to fit. */
+  private drawScreen(lines: readonly string[]): void {
+    const { ctx, canvas, pad } = this;
+    const cols = Math.max(1, ...lines.map((l) => l.length));
+    const size = Math.min(
+      (canvas.width - pad * 2) / (cols * 0.62),
+      (canvas.height - pad * 2) / (lines.length * 1.12),
+    );
+    ctx.save();
+    ctx.font = `${Math.floor(size)}px ui-monospace, 'Martian Mono Variable', Menlo, monospace`;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#C6FF1A';
+    ctx.shadowColor = 'rgba(198,255,26,0.55)';
+    ctx.shadowBlur = 8;
+    lines.forEach((line, i) => ctx.fillText(line, pad, pad + i * size * 1.12));
+    ctx.restore();
+  }
+
   draw(snap: Snapshot, input: string, cursorOn: boolean, hint: string): void {
     const { ctx, canvas, pad, lineH } = this;
     ctx.save();
     ctx.fillStyle = '#040604';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (snap.screen) {
+      ctx.restore();
+      this.drawScreen(snap.screen);
+      return;
+    }
 
     // output, newest at the bottom, above the prompt row
     const rows = this.wrap(snap.lines).slice(-(this.rows - 1));

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { TerminalEngine } from '~/terminal/engine';
+import { applyKey } from '~/terminal/keyboard';
 import { track } from '~/lib/analytics';
 import { commands } from '~/terminal/registry';
 import type { Line, SiteData, TerminalHost } from '~/terminal/types';
@@ -96,31 +97,11 @@ export default function Terminal({ data }: { data: SiteData }) {
   }, [snap.lines]);
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const line = input;
-      setInput('');
-      void engine.execute(line);
-    } else if (e.key === 'Tab') {
-      if (!input) return; // let Tab leave the terminal when there is nothing to complete
-      e.preventDefault();
-      const { value, candidates } = engine.complete(input);
-      setInput(value);
-      if (candidates.length > 1) engine.print(candidates.join('   '), 'dim');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setInput(engine.historyPrev(input));
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setInput(engine.historyNext());
-    } else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
-      e.preventDefault();
-      engine.clear();
-    } else if (e.ctrlKey && e.key.toLowerCase() === 'c' && !window.getSelection()?.toString()) {
-      e.preventDefault();
-      engine.print(`${snap.prompt} ${input}^C`, 'input');
-      setInput('');
-    }
+    // leave Ctrl+C alone while text is selected, so people can copy output
+    if (e.ctrlKey && e.key.toLowerCase() === 'c' && window.getSelection()?.toString()) return;
+    const res = applyKey(engine, e, input);
+    if (res.handled) e.preventDefault();
+    if (res.value !== input) setInput(res.value);
   }
 
   function focusInput() {
@@ -138,9 +119,11 @@ export default function Terminal({ data }: { data: SiteData }) {
           aria-live="polite"
           aria-label="Terminal output"
         >
-          {snap.lines.map((line) => (
-            <LineView key={line.id} line={line} />
-          ))}
+          {snap.screen ? (
+            <pre className="term-alt">{snap.screen.join('\n')}</pre>
+          ) : (
+            snap.lines.map((line) => <LineView key={line.id} line={line} />)
+          )}
         </div>
         <label className="term-prompt">
           <span className="term-ps1" aria-hidden="true">

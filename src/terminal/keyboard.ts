@@ -20,6 +20,8 @@ export interface KeyResult {
  */
 export function applyKey(engine: TerminalEngine, e: KeyInput, value: string): KeyResult {
   const ctrl = e.ctrlKey || e.metaKey;
+  // a full-screen command (like `life`) quits on any key
+  if (engine.getSnapshot().screen && engine.interrupt()) return { value, handled: true };
   switch (true) {
     case e.key === 'Enter':
       void engine.execute(value);
