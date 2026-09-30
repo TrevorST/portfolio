@@ -8,7 +8,8 @@ Trevor Taylor's portfolio: Astro (static), TypeScript strict, React islands only
 - **Labels carry real data.** Build tags, dates, commits and counts come from content or `__BUILD__`; never invent metrics or versions.
 - **Zero JS by default.** A page ships JavaScript only through an island (`client:*`) or a small inline `<script>`. Keep Lighthouse at the budget in `lighthouserc.cjs`.
 - **Motion respects `prefers-reduced-motion`.** Everything must work, and read, without it.
-- **The terminal engine (`src/terminal/`) has no DOM and no React.** Renderers (`src/components/terminal/`) subscribe to it. v0.2 adds a 3D renderer for the same engine, so keep that boundary.
+- **The terminal engine (`src/terminal/`) has no DOM and no React.** Two renderers subscribe to it: the flat React terminal (`src/components/terminal/`) and the 3D screen (`src/hero/`). Keybindings are shared in `src/terminal/keyboard.ts`.
+- **The 3D hero** (`src/hero/`): three.js loads only on first interaction, never at page load. All TRV-01 dimensions come from `src/hero/trv01.ts`. Keep the flat fallback working (`?flat`). See `doc/3D-MODEL.md`.
 - Content changes go in `src/content/`; schemas in `src/content.config.ts`.
 - **Analytics is Umami** (cookieless, no personal data). The only tracker entry point is `src/components/Analytics.astro`; every event and its data shape is declared in `src/lib/analytics.ts`. It loads only on Vercel production builds. Never send typed terminal input or personal data. Keep `/privacy` accurate when events change.
 - The old site in `oldwebsitecopy/` is reference only and is gitignored.

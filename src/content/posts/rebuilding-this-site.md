@@ -22,4 +22,4 @@ Try `help`. Not everything is listed.
 
 ## Next
 
-v0.2 puts that same engine on the screen of a 3D computer you scroll into.
+v0.3 puts that same engine on the screen of a 3D computer you scroll into.
