@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { measureScreen, type ScreenSpec } from './screen-spec';
 import { TRV01 } from './trv01';
 
 /**
@@ -15,7 +16,12 @@ const SIGNAL = new THREE.Color('#C6FF1A');
 export interface Computer {
   group: THREE.Object3D;
   screen: THREE.Mesh;
-  /** Materials the scene brightens at power-on (LED, accent key). */
+  /** The screen, measured from its mesh. */
+  spec: ScreenSpec;
+  /**
+   * Materials that light up at power-on (LEDs, accent key). Each carries
+   * userData.emissiveOff / emissiveOn intensities.
+   */
   glowMaterials: THREE.MeshStandardMaterial[];
 }
 
@@ -114,7 +120,8 @@ export function buildPlaceholder(version: string): Computer {
     emissive: SIGNAL,
     emissiveIntensity: 0,
   });
-  led.userData.baseEmissive = 0;
+  led.userData.emissiveOff = 0;
+  led.userData.emissiveOn = 2.2;
   const ledMesh = new THREE.Mesh(new THREE.CircleGeometry(0.005, 16), led);
   ledMesh.position.set(0.43, below, zFace + 0.001);
   const slot = new THREE.Mesh(new THREE.PlaneGeometry(0.008, 0.09), trim);
@@ -143,7 +150,8 @@ export function buildPlaceholder(version: string): Computer {
     emissiveIntensity: 0.15,
     roughness: 0.5,
   });
-  accent.userData.baseEmissive = 0.15;
+  accent.userData.emissiveOff = 0.15;
+  accent.userData.emissiveOn = 1.05;
   const enter = new THREE.Mesh(new RoundedBoxGeometry(0.052, 0.01, 0.026, 1, 0.004), accent);
   enter.position.set(0.035 + cols * pitch + 0.02, 0.005, -0.045 - pitch);
   const space = new THREE.Mesh(new RoundedBoxGeometry(0.18, 0.01, 0.026, 1, 0.004), keyMat);
@@ -151,5 +159,5 @@ export function buildPlaceholder(version: string): Computer {
   keys.add(grid, enter, space);
 
   group.add(housing, deck, recess, screen, label, ledMesh, slot, keys);
-  return { group, screen, glowMaterials: [led, accent] };
+  return { group, screen, spec: measureScreen(screen), glowMaterials: [led, accent] };
 }

@@ -40,6 +40,3 @@ export const TRV01 = {
   /** Optional modelled replacement for the placeholder. */
   modelUrl: '/models/trv01.glb',
 } as const;
-
-/** Centre of the whole unit, for framing the wide shots. */
-export const UNIT_CENTER = fromBlender(240, 260, 200);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildPlaceholder, type Computer } from './computer';
+import { measureScreen } from './screen-spec';
 import { TRV01 } from './trv01';
 
 /**
@@ -45,11 +46,16 @@ async function loadGlb(): Promise<Computer> {
   gltf.scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o === screen) return;
     for (const mat of [o.material].flat()) {
-      if (mat instanceof THREE.MeshStandardMaterial && mat.emissiveIntensity > 0) {
-        mat.userData.baseEmissive = mat.emissiveIntensity;
+      const lit = mat instanceof THREE.MeshStandardMaterial && mat.emissive.getHex() !== 0;
+      if (lit && mat.emissiveIntensity > 0) {
+        // LEDs are dark until the machine powers on, then glow as modelled
+        // capped so strong Blender emission strengths keep their colour
+        mat.userData.emissiveOn = Math.min(mat.emissiveIntensity, 2.5);
+        mat.userData.emissiveOff = 0;
+        mat.emissiveIntensity = 0;
         glowMaterials.push(mat);
       }
     }
   });
-  return { group: gltf.scene, screen, glowMaterials };
+  return { group: gltf.scene, screen, spec: measureScreen(screen), glowMaterials };
 }

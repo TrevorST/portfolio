@@ -3,9 +3,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Computer } from './computer';
 import { crtMaterial } from './crt-material';
 import { loadComputer } from './model';
-import { TRV01, UNIT_CENTER } from './trv01';
-
-const SCREEN = TRV01.screen;
+import { screenCorners, type ScreenSpec } from './screen-spec';
 
 /**
  * The hero's three.js scene. It knows nothing about the page: the controller
@@ -83,13 +81,12 @@ export class HeroScene {
   private lastLive = 0;
   /** Minimum ms between frames when only the CRT flicker is animating. */
   private idleFrameMs = 1000 / 30;
-  private holdPose: Pose = { pos: new THREE.Vector3(), target: SCREEN.center.clone() };
-
+  /** The screen and the unit's centre, measured from whichever model loaded. */
+  private readonly spec: ScreenSpec;
+  private readonly unitCenter: THREE.Vector3;
+  private holdPose: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   private wide: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
-  private readonly exit: Pose = {
-    pos: UNIT_CENTER.clone().add(new THREE.Vector3(-0.55, 0.65, 0.95)),
-    target: UNIT_CENTER.clone().add(new THREE.Vector3(0, -0.05, 0)),
-  };
+  private readonly exit: Pose;
 
   static async create(
     canvas: HTMLCanvasElement,
@@ -112,6 +109,12 @@ export class HeroScene {
     this.screenTexture = screenTexture;
     this.crt = crt;
     this.computer = computer;
+    this.spec = computer.spec;
+    this.unitCenter = new THREE.Box3().setFromObject(computer.group).getCenter(new THREE.Vector3());
+    this.exit = {
+      pos: this.unitCenter.clone().add(new THREE.Vector3(-0.55, 0.65, 0.95)),
+      target: this.unitCenter.clone().add(new THREE.Vector3(0, -0.05, 0)),
+    };
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
@@ -144,7 +147,7 @@ export class HeroScene {
       new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false }),
     );
     shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(UNIT_CENTER.x, 0.001, UNIT_CENTER.z + 0.05);
+    shadow.position.set(this.unitCenter.x, 0.001, this.unitCenter.z + 0.05);
     this.scene.add(floor, shadow);
 
     const key = new THREE.DirectionalLight('#ffffff', 1.3);
@@ -152,7 +155,10 @@ export class HeroScene {
     const rim = new THREE.DirectionalLight('#dfe8ff', 0.7);
     rim.position.set(-4, 3, -3);
     this.glow = new THREE.PointLight('#C6FF1A', 0, 1.2, 1.5);
-    this.glow.position.copy(SCREEN.center).add(new THREE.Vector3(0, -0.03, 0.3));
+    this.glow.position
+      .copy(this.spec.center)
+      .addScaledVector(this.spec.normal, 0.3)
+      .addScaledVector(this.spec.up, -0.03);
     this.scene.add(key, rim, this.glow);
 
     this.resize(canvas.clientWidth, canvas.clientHeight);
@@ -167,23 +173,24 @@ export class HeroScene {
     const tan = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
     const fill = 0.86;
     const d = Math.max(
-      SCREEN.height / (fill * 2 * tan),
-      SCREEN.width / (fill * 2 * tan * this.camera.aspect),
+      this.spec.height / (fill * 2 * tan),
+      this.spec.width / (fill * 2 * tan * this.camera.aspect),
     );
     // wide shot: unit to the right of the headline on landscape, below it on portrait
     const portrait = this.camera.aspect < 1;
     this.wide = portrait
       ? {
-          pos: UNIT_CENTER.clone().add(new THREE.Vector3(0.42, 0.66, 2.45)),
-          target: UNIT_CENTER.clone().add(new THREE.Vector3(0, 0.3, 0)),
+          pos: this.unitCenter.clone().add(new THREE.Vector3(0.42, 0.66, 2.45)),
+          target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.3, 0)),
         }
       : {
-          pos: UNIT_CENTER.clone().add(new THREE.Vector3(0.8, 0.42, 1.7)),
-          target: UNIT_CENTER.clone().add(new THREE.Vector3(-0.22, 0.03, 0)),
+          pos: this.unitCenter.clone().add(new THREE.Vector3(0.8, 0.42, 1.7)),
+          target: this.unitCenter.clone().add(new THREE.Vector3(-0.22, 0.03, 0)),
         };
+    // square on to the screen, whichever way it faces (a tilted CRT included)
     this.holdPose = {
-      pos: new THREE.Vector3(SCREEN.center.x, SCREEN.center.y, SCREEN.center.z + d),
-      target: SCREEN.center.clone(),
+      pos: this.spec.center.clone().addScaledVector(this.spec.normal, d),
+      target: this.spec.center.clone(),
     };
     this.dirty = true;
   }
@@ -198,7 +205,9 @@ export class HeroScene {
     this.power = p;
     this.crt.uniforms.uPower!.value = p;
     for (const mat of this.computer.glowMaterials) {
-      mat.emissiveIntensity = (mat.userData.baseEmissive ?? 0) + p * 2;
+      const off = (mat.userData.emissiveOff as number | undefined) ?? 0;
+      const on = (mat.userData.emissiveOn as number | undefined) ?? 2;
+      mat.emissiveIntensity = off + p * (on - off);
     }
     this.glow.intensity = p * 0.6;
     this.dirty = true;
@@ -226,22 +235,12 @@ export class HeroScene {
     const el = this.renderer.domElement;
     const w = el.clientWidth;
     const h = el.clientHeight;
-    const hw = SCREEN.width / 2;
-    const hh = SCREEN.height / 2;
-    const z = SCREEN.center.z;
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    for (const [dx, dy] of [
-      [-hw, -hh],
-      [hw, -hh],
-      [-hw, hh],
-      [hw, hh],
-    ] as const) {
-      const v = new THREE.Vector3(SCREEN.center.x + dx, SCREEN.center.y + dy, z).project(
-        this.camera,
-      );
+    for (const corner of screenCorners(this.spec)) {
+      const v = corner.project(this.camera);
       const x = ((v.x + 1) / 2) * w;
       const y = ((1 - v.y) / 2) * h;
       minX = Math.min(minX, x);

@@ -1,8 +1,22 @@
 # TRV-01: the hero computer
 
-The home page hero is a 3D computer you scroll into. Until a modelled version exists, the site builds a placeholder in code with the same proportions. Drop a model at **`public/models/trv01.glb`** and the next build uses it automatically. No code changes, no re-tuning.
+The home page hero is a 3D computer you scroll into. It uses Trevor's Blender model when `public/models/trv01.glb` exists, and falls back to a code-made placeholder otherwise.
 
-All dimensions live in one place: [`src/hero/trv01.ts`](../src/hero/trv01.ts). The camera path, the screen overlay that takes typing, and both the placeholder and the loader read from it.
+## Updating the model
+
+1. Export from Blender as **glTF Binary (.glb)** and save it over `models-src/trv01-source.glb`.
+2. Run `npm run model`. It writes `public/models/trv01.glb`, which is what the site loads.
+3. Open a PR and check the Vercel preview.
+
+`npm run model` (`scripts/prepare-model.mjs`) cleans the export up so Blender can stay loose:
+
+- **Keeps one computer.** The `KEEP` list names its objects. The current export also holds two earlier iterations, which are dropped. Exporting with "Selected Objects" avoids this.
+- **Finds the screen by ray-casting** through the bezel at `screen.001`. It then adds a flat `Screen` plane with clean 0–1 UVs exactly over the visible glass (tilt included), and removes the original curved glass so it can't cover the terminal.
+- **Applies the Signal palette** by part (`PART`). LEDs keep their emissive colour and go dark until power-on.
+- **Orients and scales it:** front to +Z, height to 462 mm, front-left-bottom corner at the origin.
+- **Draco-compresses it:** 685 KB → about 25 KB.
+
+The site measures the `Screen` mesh at runtime (`src/hero/screen-spec.ts`): its centre, facing direction, width and height. The camera zoom and the invisible typing overlay follow whatever screen the model has, so nothing needs re-tuning when the model changes.
 
 ## Reference: TRV-01 orthographic sheet
 
