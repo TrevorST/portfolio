@@ -10,7 +10,8 @@
  *   1. finds the visible screen by ray-casting through the bezel, and adds a
  *      clean `Screen` plane over it with 0..1 UVs (the site paints the
  *      terminal onto it),
- *   2. keeps Trevor's materials and texture; LEDs go dark until power-on, and
+ *   2. keeps Trevor's materials and texture, bakes his vertex shading into
+ *      vertex colours; LEDs go dark until power-on, and
  *      the cords (not unwrapped yet) get plain rubber,
  *   3. rotates the front to +Z, scales the body to TRV-01 height (462 mm) and
  *      puts its front-left-bottom corner at the origin (cords don't count),
@@ -34,11 +35,23 @@ const SCREEN_SOURCE = 'screen.001';
 /** Loose parts that shouldn't count toward the unit's size or the camera framing. */
 const LOOSE = /^cord/i;
 /**
- * Materials that use the sheet in Blender through nodes the glTF exporter
- * can't follow (front-plate mixes it with a colour attribute), so they export
- * untextured and plain white. They get the sheet back here.
+ * Vertex shading. In Blender, front-plate multiplies the sheet by its "Color"
+ * attribute run through a Color Ramp. The exporter writes the raw attribute
+ * (COLOR_1) but not the ramp or the multiply, so both are baked here into
+ * COLOR_0, which glTF multiplies with the texture. `ramp` is the Color Ramp
+ * sampled at 33 even steps from 0 to 1 (scripts/blender-ramp.py prints it).
  */
-const USES_SHEET = ['front-plate'];
+const VERTEX_SHADE = {
+  'front-plate': {
+    from: 'COLOR_1',
+    // prettier-ignore
+    ramp: [
+      0.0, 0.0004, 0.0029, 0.0097, 0.0231, 0.045, 0.0778, 0.1236, 0.1722, 0.1941, 0.2174,
+      0.2422, 0.2682, 0.2953, 0.3234, 0.3523, 0.3818, 0.4119, 0.4424, 0.4732, 0.5041, 0.535,
+      0.5657, 0.5961, 0.6261, 0.6555, 0.6842, 0.712, 0.7388, 0.7645, 0.7889, 0.8119, 0.8333,
+    ],
+  },
+};
 /** The cords aren't unwrapped onto the sheet yet, so they get plain rubber. */
 const CORD = { hex: '#0c0d0f', rough: 0.8 };
 const TARGET_HEIGHT = 0.462; // TRV-01: 462 mm
@@ -148,20 +161,33 @@ for (const node of root.listNodes()) {
   if (!LOOSE.test(node.getName())) continue;
   for (const prim of node.getMesh()?.listPrimitives() ?? []) prim.setMaterial(rubber);
 }
-const sheet = root.listTextures()[0];
 for (const mat of root.listMaterials()) {
-  if (sheet && USES_SHEET.includes(mat.getName()) && !mat.getBaseColorTexture()) {
-    mat.setBaseColorTexture(sheet);
-  }
   // LEDs keep their glow colour but go dark when unlit
   if (mat.getEmissiveFactor().some((c) => c > 0)) mat.setBaseColorFactor([0.02, 0.02, 0.02, 1]);
 }
+/** The painted value through the Color Ramp, linearly interpolated between samples. */
+function rampAt(ramp, t) {
+  const x = Math.min(Math.max(t, 0), 1) * (ramp.length - 1);
+  const i = Math.min(Math.floor(x), ramp.length - 2);
+  return ramp[i] + (ramp[i + 1] - ramp[i]) * (x - i);
+}
 for (const mesh of root.listMeshes()) {
   for (const prim of mesh.listPrimitives()) {
-    // vertex colours are paint data the site doesn't use (three.js would tint with them)
+    const shade = VERTEX_SHADE[prim.getMaterial()?.getName()];
+    const painted = shade && prim.getAttribute(shade.from);
+    let baked = null;
+    if (painted) {
+      const rgb = new Float32Array(painted.getCount() * 3);
+      for (let i = 0; i < painted.getCount(); i++) {
+        rgb.fill(rampAt(shade.ramp, painted.getElement(i, [])[0]), i * 3, i * 3 + 3);
+      }
+      baked = doc.createAccessor().setType('VEC3').setArray(rgb).setBuffer(root.listBuffers()[0]);
+    }
+    // every other vertex colour is paint data the site doesn't use
     for (const semantic of prim.listSemantics()) {
       if (semantic.startsWith('COLOR_')) prim.setAttribute(semantic, null);
     }
+    if (baked) prim.setAttribute('COLOR_0', baked);
     // UVs only matter where there is a texture to look up
     if (!prim.getMaterial()?.getBaseColorTexture()) prim.setAttribute('TEXCOORD_0', null);
   }

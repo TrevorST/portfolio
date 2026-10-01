@@ -20,9 +20,9 @@ The page imports the optimised file (`trv01.glb?url` in `src/pages/index.astro`)
 `npm run model` (`scripts/prepare-model.mjs`) cleans the export up so Blender can stay loose:
 
 - **Finds the screen by ray-casting** through the bezel at `screen.001`. It then adds a flat `Screen` plane with clean 0–1 UVs exactly over the visible glass (tilt included), and removes the original curved glass so it can't cover the terminal.
-- **Keeps your materials and the texture sheet.** Three exceptions:
+- **Keeps your materials and the texture sheet.** Three adjustments:
   - LEDs keep their emissive colour and go dark until power-on.
-  - `front-plate` gets the sheet put back (`USES_SHEET`): in Blender its image goes through a Mix node, which the glTF exporter can't export, so it arrives untextured and white.
+  - **Vertex shading is baked in** (`VERTEX_SHADE`). `front-plate` multiplies the sheet by its `Color` attribute through a Color Ramp. The exporter writes the raw attribute but not the ramp or the multiply, so the script applies the ramp and stores the result as the model's vertex colour, which three.js multiplies with the texture. It costs no extra texture. If you change the ramp, run `blender --background your.blend --python scripts/blender-ramp.py -- front-plate` and paste the numbers into `VERTEX_SHADE`.
   - Cords (`CORD*`) get a plain dark rubber material (`CORD`) until they are unwrapped onto the sheet.
 - **Orients and scales it:** front to +Z, the body scaled to 462 mm tall, its front-left-bottom corner at the origin. Cords don't count toward the size or the camera framing; they sit in a separate `Loose` group next to `Body`.
 - **Shrinks it:**
@@ -30,14 +30,14 @@ The page imports the optimised file (`trv01.glb?url` in `src/pages/index.astro`)
   - Meshes that share a material are joined, so the GPU draws about 10 objects, not 25.
   - The texture is re-encoded as lossless WebP, capped at 1024 px.
   - Geometry is Draco-compressed.
-  - Current result: 249 KB → 40 KB, one file, one request.
+  - Current result: 251 KB → 42 KB, one file, one request.
 
 The site measures the `Screen` mesh at runtime (`src/hero/screen-spec.ts`): its centre, facing direction, width and height. The camera zoom and the invisible typing overlay follow whatever screen the model has, so nothing needs re-tuning when the model changes.
 
 ## Texturing rules that keep it fast
 
 - **One sheet for everything.** Every textured material should point at the same image (`terminal-sheet.png`). One image means one download and one GPU upload.
-- **Plug the image straight into Base Color.** The glTF exporter only follows Image Texture → Principled BSDF. Mix, Color Ramp and Color Attribute nodes are dropped. To keep an effect made with them, bake it into the sheet.
+- **Keep node setups simple.** The glTF exporter follows Image Texture → Base Color, and Image Texture × something → Base Color (it keeps the image, drops the rest). Color Ramps and Mix factors are not exported. Vertex shading works through `VERTEX_SHADE` above; keep the Multiply node's Factor at 1, because a glTF vertex colour can only multiply.
 - **Flat-coloured parts** can map all their UVs onto a colour swatch on the sheet, or just use a plain material colour. Both are cheap.
 - **Keep the sheet at 1024 px** unless text on it looks soft up close.
 
