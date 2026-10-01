@@ -91,12 +91,12 @@ export class HeroScene {
   static async create(
     canvas: HTMLCanvasElement,
     screenCanvas: HTMLCanvasElement,
-    opts: { version: string; hasModel: boolean },
+    opts: { version: string; modelUrl: string | undefined },
   ): Promise<HeroScene> {
     const texture = new THREE.CanvasTexture(screenCanvas);
     texture.anisotropy = 8;
     const crt = crtMaterial(texture);
-    const computer = await loadComputer(opts.hasModel, crt, opts.version);
+    const computer = await loadComputer(opts.modelUrl, crt, opts.version);
     return new HeroScene(canvas, texture, crt, computer);
   }
 
@@ -110,7 +110,9 @@ export class HeroScene {
     this.crt = crt;
     this.computer = computer;
     this.spec = computer.spec;
-    this.unitCenter = new THREE.Box3().setFromObject(computer.group).getCenter(new THREE.Vector3());
+    this.unitCenter = new THREE.Box3()
+      .setFromObject(computer.frame ?? computer.group)
+      .getCenter(new THREE.Vector3());
     this.exit = {
       pos: this.unitCenter.clone().add(new THREE.Vector3(-0.55, 0.65, 0.95)),
       target: this.unitCenter.clone().add(new THREE.Vector3(0, -0.05, 0)),

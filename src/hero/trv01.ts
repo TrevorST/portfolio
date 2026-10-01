@@ -37,6 +37,4 @@ export const TRV01 = {
   chamfer: mm(40),
   /** Terminal texture: 16:10, like the reference's 1680 x 1050 emission map. */
   texture: { width: 1280, height: 800 },
-  /** Optional modelled replacement for the placeholder. */
-  modelUrl: '/models/trv01.glb',
 } as const;

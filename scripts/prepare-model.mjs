@@ -2,96 +2,84 @@
 /**
  * Turns Trevor's Blender export into the site's hero model.
  *
- *   npm run model   (models-src/trv01-source.glb -> public/models/trv01.glb)
+ *   npm run model
+ *   (src/assets/models/trv01-source.glb -> src/assets/models/trv01.glb)
  *
- * The export holds several design iterations and default grey materials, in
- * metres with the front facing +X. This script:
- *   1. keeps one computer (KEEP),
- *   2. finds the visible screen by ray-casting through the bezel, and adds a
+ * The export is in metres with the front facing +X, textured from one sheet.
+ * This script:
+ *   1. finds the visible screen by ray-casting through the bezel, and adds a
  *      clean `Screen` plane over it with 0..1 UVs (the site paints the
  *      terminal onto it),
- *   3. gives the parts the Signal palette (LED materials are kept),
- *   4. rotates the front to +Z, scales to TRV-01 height (462 mm) and puts the
- *      front-left-bottom corner at the origin,
- *   5. Draco-compresses the result.
+ *   2. keeps Trevor's materials and texture; LEDs go dark until power-on, and
+ *      the cords (not unwrapped yet) get plain rubber,
+ *   3. rotates the front to +Z, scales the body to TRV-01 height (462 mm) and
+ *      puts its front-left-bottom corner at the origin (cords don't count),
+ *   4. shrinks it: unused vertex data dropped, meshes joined per material,
+ *      the texture re-encoded as WebP, geometry Draco-compressed.
  * Rerun it whenever the Blender file changes.
  */
-import { readFileSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { draco, prune, dedup, weld } from '@gltf-transform/functions';
+import { dedup, draco, join, prune, textureCompress, weld } from '@gltf-transform/functions';
 import draco3d from 'draco3dgltf';
+import sharp from 'sharp';
 
-const [, , SRC = 'models-src/trv01-source.glb', OUT = 'public/models/trv01.glb'] = process.argv;
+const [, , SRC = 'src/assets/models/trv01-source.glb', OUT = 'src/assets/models/trv01.glb'] =
+  process.argv;
 
-/** The computer with the power LEDs (the other two are earlier iterations). */
-const KEEP = [
-  'Cube.005',
-  'Cube.006',
-  'Cube.007',
-  'Cube.008',
-  'Circle.011',
-  'Circle.013',
-  'Circle.014',
-  'Circle.015',
-  'Circle.016',
-  'Plane.008',
-  'Plane.009',
-  'Plane.010',
-  'LED_power_on',
-  'scanner.001',
-  'scanner_screen.001',
-  'screen.001',
-];
+/** The glass in the export. Measured, then replaced by the flat Screen plane. */
 const SCREEN_SOURCE = 'screen.001';
+/** Loose parts that shouldn't count toward the unit's size or the camera framing. */
+const LOOSE = /^cord/i;
+/**
+ * Materials that use the sheet in Blender through nodes the glTF exporter
+ * can't follow (front-plate mixes it with a colour attribute), so they export
+ * untextured and plain white. They get the sheet back here.
+ */
+const USES_SHEET = ['front-plate'];
+/** The cords aren't unwrapped onto the sheet yet, so they get plain rubber. */
+const CORD = { hex: '#0c0d0f', rough: 0.8 };
 const TARGET_HEIGHT = 0.462; // TRV-01: 462 mm
+const TEXTURE_MAX = 1024;
 
-/** Signal palette by part. Unlisted parts get the shell. */
-const PALETTE = {
-  shell: { hex: '#1b1d21', rough: 0.55, metal: 0.15 },
-  panel: { hex: '#202328', rough: 0.6, metal: 0.1 },
-  trim: { hex: '#0c0d0f', rough: 0.85, metal: 0.05 },
-  keys: { hex: '#15171a', rough: 0.6, metal: 0.05 },
-  metal: { hex: '#4a4e55', rough: 0.35, metal: 0.8 },
-  glass: { hex: '#030403', rough: 0.2, metal: 0.0 },
-};
-const PART = {
-  'Cube.005': 'shell',
-  'Cube.006': 'panel',
-  'Cube.007': 'trim',
-  'Cube.008': 'shell',
-  'Plane.008': 'keys',
-  'Plane.009': 'trim',
-  'Circle.011': 'trim',
-  'Circle.013': 'trim',
-  'Circle.014': 'metal',
-  'Circle.015': 'metal',
-  'Circle.016': 'metal',
-  'scanner.001': 'trim',
-  'scanner_screen.001': 'glass',
-  'screen.001': 'glass',
-};
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+  'draco3d.decoder': await draco3d.createDecoderModule(),
+  'draco3d.encoder': await draco3d.createEncoderModule(),
+});
+const doc = await io.read(SRC);
+const root = doc.getRoot();
+const scene = root.listScenes()[0];
 
 // ---- 1. find the visible screen with three.js ray casting ----
-async function measureScreen() {
-  const buf = readFileSync(SRC);
-  const gltf = await new GLTFLoader().parseAsync(
-    buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-    '',
-  );
-  const scene = gltf.scene;
-  scene.updateMatrixWorld(true);
-  const screen = scene.getObjectByName(SCREEN_SOURCE.replace('.', ''));
+function measureScreen() {
+  const world = new THREE.Group();
+  let screen;
+  for (const node of root.listNodes()) {
+    for (const prim of node.getMesh()?.listPrimitives() ?? []) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(prim.getAttribute('POSITION').getArray(), 3),
+      );
+      const indices = prim.getIndices();
+      if (indices) geo.setIndex(new THREE.BufferAttribute(indices.getArray(), 1));
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+      mesh.applyMatrix4(new THREE.Matrix4().fromArray(node.getWorldMatrix()));
+      world.add(mesh);
+      if (node.getName() === SCREEN_SOURCE) screen = mesh;
+    }
+  }
   if (!screen) throw new Error(`no ${SCREEN_SOURCE} in ${SRC}`);
+  world.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(screen);
   // the front faces +X: cast from in front, find the rectangle of rays that hit
   // the screen itself rather than the bezel
   const rc = new THREE.Raycaster();
   const hitAt = (y, z) => {
     rc.set(new THREE.Vector3(box.max.x + 2, y, z), new THREE.Vector3(-1, 0, 0));
-    const h = rc.intersectObject(scene, true)[0];
+    const h = rc.intersectObject(world, true)[0];
     return h && h.object === screen ? h.point : null;
   };
   let minY = Infinity,
@@ -135,7 +123,7 @@ async function measureScreen() {
   };
 }
 
-const corners = await measureScreen();
+const corners = measureScreen();
 const width = corners.bl.distanceTo(corners.br);
 const height = corners.bl.distanceTo(corners.tl);
 const normal = new THREE.Vector3()
@@ -146,52 +134,50 @@ console.log(
   `screen ${width.toFixed(3)} x ${height.toFixed(3)} (aspect ${(width / height).toFixed(3)}), normal ${normal.toArray().map((n) => n.toFixed(3))}`,
 );
 
-// ---- 2. edit the file with glTF Transform ----
-const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
-  'draco3d.decoder': await draco3d.createDecoderModule(),
-  'draco3d.encoder': await draco3d.createEncoderModule(),
-});
-const doc = await io.read(SRC);
-const root = doc.getRoot();
-const scene = root.listScenes()[0];
+// ---- 2. materials ----
+// drop the original glass: it is curved and would bulge in front of the Screen
+for (const node of root.listNodes()) if (node.getName() === SCREEN_SOURCE) node.dispose();
 
-// keep one computer; drop its original glass, which is curved and would bulge
-// in front of the flat Screen plane that replaces it
+const rubber = doc
+  .createMaterial('trv01_cord')
+  // glTF colour factors are linear; THREE.Color converts from sRGB hex
+  .setBaseColorFactor([...new THREE.Color(CORD.hex).toArray(), 1])
+  .setRoughnessFactor(CORD.rough)
+  .setMetallicFactor(0);
 for (const node of root.listNodes()) {
-  const keep = KEEP.includes(node.getName()) && node.getName() !== SCREEN_SOURCE;
-  if (!keep && !node.getParentNode()) node.dispose();
+  if (!LOOSE.test(node.getName())) continue;
+  for (const prim of node.getMesh()?.listPrimitives() ?? []) prim.setMaterial(rubber);
 }
-
-// palette
-const materials = {};
-for (const [key, p] of Object.entries(PALETTE)) {
-  materials[key] = doc
-    .createMaterial(`trv01_${key}`)
-    // glTF colour factors are linear; THREE.Color converts from sRGB hex
-    .setBaseColorFactor([...new THREE.Color(p.hex).toArray(), 1])
-    .setRoughnessFactor(p.rough)
-    .setMetallicFactor(p.metal);
+const sheet = root.listTextures()[0];
+for (const mat of root.listMaterials()) {
+  if (sheet && USES_SHEET.includes(mat.getName()) && !mat.getBaseColorTexture()) {
+    mat.setBaseColorTexture(sheet);
+  }
+  // LEDs keep their glow colour but go dark when unlit
+  if (mat.getEmissiveFactor().some((c) => c > 0)) mat.setBaseColorFactor([0.02, 0.02, 0.02, 1]);
 }
-for (const node of root.listNodes()) {
-  const mesh = node.getMesh();
-  if (!mesh) continue;
+for (const mesh of root.listMeshes()) {
   for (const prim of mesh.listPrimitives()) {
-    const current = prim.getMaterial();
-    if (current && current.getEmissiveFactor().some((c) => c > 0)) {
-      // LEDs keep their glow colour but go dark when unlit
-      current.setBaseColorFactor([0.02, 0.02, 0.02, 1]);
-      continue;
+    // vertex colours are paint data the site doesn't use (three.js would tint with them)
+    for (const semantic of prim.listSemantics()) {
+      if (semantic.startsWith('COLOR_')) prim.setAttribute(semantic, null);
     }
-    prim.setMaterial(materials[PART[node.getName()] ?? 'shell']);
+    // UVs only matter where there is a texture to look up
+    if (!prim.getMaterial()?.getBaseColorTexture()) prim.setAttribute('TEXCOORD_0', null);
   }
 }
 
-// the Screen plane, 1 mm in front of the glass, in source coordinates
+// ---- 3. the Screen plane, 1 mm in front of the glass, in source coordinates ----
+const glass = doc
+  .createMaterial('trv01_glass')
+  .setBaseColorFactor([...new THREE.Color('#030403').toArray(), 1])
+  .setRoughnessFactor(0.2)
+  .setMetallicFactor(0);
 const lift = normal.clone().multiplyScalar(0.001);
 const pts = [corners.bl, corners.br, corners.tr, corners.tl].map((p) => p.clone().add(lift));
 const buffer = root.listBuffers()[0];
 const acc = (type, array) => doc.createAccessor().setType(type).setArray(array).setBuffer(buffer);
-const prim = doc
+const screenPrim = doc
   .createPrimitive()
   .setAttribute('POSITION', acc('VEC3', new Float32Array(pts.flatMap((p) => p.toArray()))))
   .setAttribute(
@@ -200,30 +186,50 @@ const prim = doc
   )
   .setAttribute('TEXCOORD_0', acc('VEC2', new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])))
   .setIndices(acc('SCALAR', new Uint16Array([0, 1, 2, 0, 2, 3])))
-  .setMaterial(materials.glass);
-const screenNode = doc.createNode('Screen').setMesh(doc.createMesh('Screen').addPrimitive(prim));
+  .setMaterial(glass);
+const screenNode = doc
+  .createNode('Screen')
+  .setMesh(doc.createMesh('Screen').addPrimitive(screenPrim));
 
-// re-root: front to +Z, scaled to TRV-01 height, front-left-bottom at the origin
+// ---- 4. re-root: TRV01 > Body (the unit), Loose (cords), Screen ----
 const unit = doc.createNode('TRV01');
+const body = doc.createNode('Body');
+const loose = doc.createNode('Loose');
 for (const node of scene.listChildren()) {
   scene.removeChild(node);
-  unit.addChild(node);
+  (LOOSE.test(node.getName()) ? loose : body).addChild(node);
 }
-unit.addChild(screenNode);
+unit.addChild(body).addChild(loose).addChild(screenNode);
 scene.addChild(unit);
+// front to +Z, the body scaled to TRV-01 height, its front-left-bottom at the origin
 unit.setRotation([0, -Math.SQRT1_2, 0, Math.SQRT1_2]); // -90 deg about Y: +X -> +Z
-let b = getBounds(unit);
+let b = getBounds(body);
 const scale = TARGET_HEIGHT / (b.max[1] - b.min[1]);
 unit.setScale([scale, scale, scale]);
-b = getBounds(unit);
+b = getBounds(body);
 unit.setTranslation([-b.min[0], -b.min[1], -b.max[2]]);
-b = getBounds(unit);
+b = getBounds(body);
 console.log(
   `unit ${b.max[0].toFixed(3)} W x ${b.max[1].toFixed(3)} H x ${(-b.min[2]).toFixed(3)} D m`,
 );
 
-// keepAttributes: the Screen UVs look unused (its stand-in material has no
-// texture) but the site paints the terminal through them
-await doc.transform(dedup(), prune({ keepAttributes: true }), weld(), draco());
+// ---- 5. shrink ----
+await doc.transform(
+  dedup(),
+  // one mesh per material within Body and within Loose: fewer draw calls
+  join(),
+  // keepAttributes: the Screen UVs look unused (its stand-in material has no
+  // texture) but the site paints the terminal through them
+  prune({ keepAttributes: true }),
+  weld(),
+  textureCompress({
+    encoder: sharp,
+    targetFormat: 'webp',
+    lossless: true,
+    resize: [TEXTURE_MAX, TEXTURE_MAX],
+  }),
+  draco(),
+);
 await io.write(OUT, doc);
-console.log(`wrote ${OUT}`);
+const kb = (f) => `${(statSync(f).size / 1024).toFixed(0)} KB`;
+console.log(`wrote ${OUT}: ${kb(SRC)} -> ${kb(OUT)}`);

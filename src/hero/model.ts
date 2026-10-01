@@ -4,18 +4,18 @@ import { measureScreen } from './screen-spec';
 import { TRV01 } from './trv01';
 
 /**
- * Picks the computer: the modelled /models/trv01.glb when the build found one
- * (see Hero.astro), otherwise the code-made placeholder. Either way the
+ * Picks the computer: the modelled trv01.glb (src/assets/models, passed in by
+ * the page as a hashed URL), or the code-made placeholder if it fails to load. Either way the
  * screen mesh gets the CRT material.
  */
 export async function loadComputer(
-  hasModel: boolean,
+  modelUrl: string | undefined,
   screenMaterial: THREE.Material,
   version: string,
 ): Promise<Computer> {
-  if (hasModel) {
+  if (modelUrl) {
     try {
-      const computer = await loadGlb();
+      const computer = await loadGlb(modelUrl);
       computer.screen.material = screenMaterial;
       return computer;
     } catch (err) {
@@ -27,14 +27,14 @@ export async function loadComputer(
   return computer;
 }
 
-async function loadGlb(): Promise<Computer> {
+async function loadGlb(url: string): Promise<Computer> {
   const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
     import('three/addons/loaders/GLTFLoader.js'),
     import('three/addons/loaders/DRACOLoader.js'),
   ]);
   // three bundles and self-hosts the Draco decoder; it's fetched only for a Draco .glb
   const draco = new DRACOLoader();
-  const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(TRV01.modelUrl);
+  const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(url);
   draco.dispose();
 
   const screen = gltf.scene.getObjectByName(TRV01.screen.meshName);
@@ -57,5 +57,14 @@ async function loadGlb(): Promise<Computer> {
       }
     }
   });
-  return { group: gltf.scene, screen, spec: measureScreen(screen), glowMaterials };
+  const computer: Computer = {
+    group: gltf.scene,
+    screen,
+    spec: measureScreen(screen),
+    glowMaterials,
+  };
+  // the unit itself, without the cords that trail off behind it
+  const body = gltf.scene.getObjectByName('Body');
+  if (body) computer.frame = body;
+  return computer;
 }

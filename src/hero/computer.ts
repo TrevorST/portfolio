@@ -15,6 +15,8 @@ const SIGNAL = new THREE.Color('#C6FF1A');
 
 export interface Computer {
   group: THREE.Object3D;
+  /** What the camera frames, when that is less than the whole group (no trailing cords). */
+  frame?: THREE.Object3D;
   screen: THREE.Mesh;
   /** The screen, measured from its mesh. */
   spec: ScreenSpec;

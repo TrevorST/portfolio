@@ -56,7 +56,7 @@ if (root && html.dataset.hero === '3d') {
     import('./stage3d')
       .then((m) =>
         m.mountStage({ root, canvas, input, log }, data, {
-          hasModel: root.dataset.model === 'glb',
+          modelUrl: root.dataset.modelUrl,
         }),
       )
       .then((s) => {
