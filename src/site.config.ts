@@ -5,7 +5,7 @@
 export const site = {
   name: 'Trevor Taylor',
   handle: 'trevor',
-  role: 'Software engineer / platform',
+  role: 'Software Engineer / Platform Engineer',
   description:
     'Trevor Taylor, software engineer at Toyota Motor North America. CI/CD platforms and database engineering at work; editors, simulations and a Doom port on my own time.',
   bio: 'Software engineer at Toyota Motor North America, building the Internal Developer Platform: CI/CD for 100+ applications across ~50 teams, and the database migration framework under it. Greenfield to production went from ~60 days to under 3 hours. Before that, full-stack at UNIFYI.',
