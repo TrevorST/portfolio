@@ -133,6 +133,18 @@ export class HeroScene {
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     this.scene.environmentIntensity = 0.35;
+    // materials that ask for it (the modelled unit's metal finish) reflect the room more strongly
+    const env = this.scene.environment;
+    this.computer.group.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      for (const mat of [o.material].flat()) {
+        const reflect = mat.userData.reflect as number | undefined;
+        if (reflect && mat instanceof THREE.MeshStandardMaterial) {
+          mat.envMap = env;
+          mat.envMapIntensity = reflect;
+        }
+      }
+    });
     pmrem.dispose();
     this.scene.background = VOID;
     this.scene.fog = new THREE.Fog(VOID, 1.8, 5.5);

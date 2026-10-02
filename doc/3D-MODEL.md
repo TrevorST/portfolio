@@ -36,6 +36,10 @@ The page imports the optimised file (`trv01.glb?url` in `src/pages/index.astro`)
 
 The site measures the `Screen` mesh at runtime (`src/hero/screen-spec.ts`): its centre, facing direction, width and height. The camera zoom and the invisible typing overlay follow whatever screen the model has, so nothing needs re-tuning when the model changes.
 
+## The metal finish
+
+The site gives the whole unit a brushed-metal look at load time (`FINISH` in `src/hero/model.ts`): every material is at least 0.7 metallic and at most 0.38 rough, and reflects the room at 1.1 strength. Raise `metalness` and lower `roughness` for more chrome; lower `reflect` to calm the highlights. These are three numbers, so they add nothing to the download.
+
 ## Texturing rules that keep it fast
 
 - **One sheet for everything.** Every textured material should point at the same image (`terminal-sheet.png`). One image means one download and one GPU upload.

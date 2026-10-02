@@ -27,6 +27,13 @@ export async function loadComputer(
   return computer;
 }
 
+/**
+ * A brushed-metal finish for the modelled unit: every part is at least this
+ * metallic and at most this rough, and reflects the room this strongly
+ * (the scene applies `reflect`). Numbers only, so it costs nothing to load.
+ */
+const FINISH = { metalness: 0.7, roughness: 0.38, reflect: 1.1 };
+
 async function loadGlb(url: string): Promise<Computer> {
   const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
     import('three/addons/loaders/GLTFLoader.js'),
@@ -46,6 +53,11 @@ async function loadGlb(url: string): Promise<Computer> {
   gltf.scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o === screen) return;
     for (const mat of [o.material].flat()) {
+      if (mat instanceof THREE.MeshStandardMaterial) {
+        mat.metalness = Math.max(mat.metalness, FINISH.metalness);
+        mat.roughness = Math.min(mat.roughness, FINISH.roughness);
+        mat.userData.reflect = FINISH.reflect;
+      }
       const lit = mat instanceof THREE.MeshStandardMaterial && mat.emissive.getHex() !== 0;
       if (lit && mat.emissiveIntensity > 0) {
         // LEDs are dark until the machine powers on, then glow as modelled
