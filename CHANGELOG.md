@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/TrevorST/portfolio/compare/v0.3.0...v0.4.0) (2026-10-02)
+
+
+### Features
+
+* Trevor's TRV-01 model in the 3D hero ([#25](https://github.com/TrevorST/portfolio/issues/25)) ([9c118fd](https://github.com/TrevorST/portfolio/commit/9c118fd88559413805095e439d105e8ac1fe60d9))
+
+
+### Content
+
+* new hero copy and role title ([#26](https://github.com/TrevorST/portfolio/issues/26)) ([ec0cac7](https://github.com/TrevorST/portfolio/commit/ec0cac77af0f9aca55b110292392bdf6544b8dd3))
+
 ## [0.3.0](https://github.com/TrevorST/portfolio/compare/v0.2.1...v0.3.0) (2026-09-30)
 
 
