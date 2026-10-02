@@ -11,15 +11,14 @@
  *      clean `Screen` plane over it with 0..1 UVs (the site paints the
  *      terminal onto it),
  *   2. keeps Trevor's materials and texture, bakes his vertex shading into
- *      vertex colours; LEDs go dark until power-on, and
- *      the cords (not unwrapped yet) get plain rubber,
+ *      vertex colours; LEDs go dark until power-on,
  *   3. rotates the front to +Z, scales the body to TRV-01 height (462 mm) and
  *      puts its front-left-bottom corner at the origin (cords don't count),
  *   4. shrinks it: unused vertex data dropped, meshes joined per material,
  *      the texture re-encoded as WebP, geometry Draco-compressed.
  * Rerun it whenever the Blender file changes.
  */
-import { statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as THREE from 'three';
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -35,25 +34,14 @@ const SCREEN_SOURCE = 'screen.001';
 /** Loose parts that shouldn't count toward the unit's size or the camera framing. */
 const LOOSE = /^cord/i;
 /**
- * Vertex shading. In Blender, front-plate multiplies the sheet by its "Color"
+ * Vertex shading. Some materials multiply the sheet by a painted colour
  * attribute run through a Color Ramp. The exporter writes the raw attribute
  * (COLOR_1) but not the ramp or the multiply, so both are baked here into
- * COLOR_0, which glTF multiplies with the texture. `ramp` is the Color Ramp
- * sampled at 33 even steps from 0 to 1 (scripts/blender-ramp.py prints it).
+ * COLOR_0, which glTF multiplies with the texture. The ramps come from the
+ * .blend: scripts/blender-ramp.py writes them to SHADING, keyed by material.
  */
-const VERTEX_SHADE = {
-  'front-plate': {
-    from: 'COLOR_1',
-    // prettier-ignore
-    ramp: [
-      0.0, 0.0004, 0.0029, 0.0097, 0.0231, 0.045, 0.0778, 0.1236, 0.1722, 0.1941, 0.2174,
-      0.2422, 0.2682, 0.2953, 0.3234, 0.3523, 0.3818, 0.4119, 0.4424, 0.4732, 0.5041, 0.535,
-      0.5657, 0.5961, 0.6261, 0.6555, 0.6842, 0.712, 0.7388, 0.7645, 0.7889, 0.8119, 0.8333,
-    ],
-  },
-};
-/** The cords aren't unwrapped onto the sheet yet, so they get plain rubber. */
-const CORD = { hex: '#0c0d0f', rough: 0.8 };
+const SHADING = 'src/assets/models/trv01-shading.json';
+const PAINTED = 'COLOR_1';
 const TARGET_HEIGHT = 0.462; // TRV-01: 462 mm
 const TEXTURE_MAX = 1024;
 
@@ -62,6 +50,7 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
   'draco3d.encoder': await draco3d.createEncoderModule(),
 });
 const doc = await io.read(SRC);
+const shading = existsSync(SHADING) ? JSON.parse(readFileSync(SHADING, 'utf8')) : {};
 const root = doc.getRoot();
 const scene = root.listScenes()[0];
 
@@ -151,16 +140,6 @@ console.log(
 // drop the original glass: it is curved and would bulge in front of the Screen
 for (const node of root.listNodes()) if (node.getName() === SCREEN_SOURCE) node.dispose();
 
-const rubber = doc
-  .createMaterial('trv01_cord')
-  // glTF colour factors are linear; THREE.Color converts from sRGB hex
-  .setBaseColorFactor([...new THREE.Color(CORD.hex).toArray(), 1])
-  .setRoughnessFactor(CORD.rough)
-  .setMetallicFactor(0);
-for (const node of root.listNodes()) {
-  if (!LOOSE.test(node.getName())) continue;
-  for (const prim of node.getMesh()?.listPrimitives() ?? []) prim.setMaterial(rubber);
-}
 for (const mat of root.listMaterials()) {
   // LEDs keep their glow colour but go dark when unlit
   if (mat.getEmissiveFactor().some((c) => c > 0)) mat.setBaseColorFactor([0.02, 0.02, 0.02, 1]);
@@ -173,8 +152,8 @@ function rampAt(ramp, t) {
 }
 for (const mesh of root.listMeshes()) {
   for (const prim of mesh.listPrimitives()) {
-    const shade = VERTEX_SHADE[prim.getMaterial()?.getName()];
-    const painted = shade && prim.getAttribute(shade.from);
+    const shade = shading[prim.getMaterial()?.getName()];
+    const painted = shade && prim.getAttribute(PAINTED);
     let baked = null;
     if (painted) {
       const rgb = new Float32Array(painted.getCount() * 3);
