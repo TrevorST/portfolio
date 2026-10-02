@@ -343,10 +343,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
   :global(html[data-hero='3d']) .intro {
     position: absolute;
     inset: 0;
-    max-width: var(--max);
-    margin-inline: auto;
-    padding: calc(var(--bar-h) + 40px) var(--gutter) 88px;
-    align-content: end;
+    /* full bleed: the headline anchors to the left edge, whatever the width */
+    max-width: none;
+    padding: calc(var(--bar-h) + 28px) clamp(var(--gutter), 5vw, 112px) 88px;
+    grid-template-rows: 1fr auto auto auto;
+    align-content: stretch;
     pointer-events: none;
     opacity: clamp(0, calc(1 - var(--p, 0) * 5), 1);
     transform: translateY(calc(var(--p, 0) * -160px));
@@ -358,8 +359,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
     display: none; /* the Game of Life belongs to the flat hero */
   }
   :global(html[data-hero='3d']) .intro h1 {
-    font-size: clamp(3rem, 9vw, 8.5rem);
+    font-size: clamp(3rem, 7.6vw, 13rem);
     max-width: 11ch;
+  }
+  :global(html[data-hero='3d']) .hero-meta {
+    align-self: start; /* the readouts ride along the top edge */
   }
   :global(html[data-hero='3d']) .hero-foot {
     max-width: 44rem;
