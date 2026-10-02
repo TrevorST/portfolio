@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Computer } from './computer';
 import { crtMaterial } from './crt-material';
+import { LifeFloor } from './life-floor';
 import { loadComputer } from './model';
 import { screenCorners, type ScreenSpec } from './screen-spec';
 
@@ -70,6 +71,7 @@ export class HeroScene {
   private readonly crt: THREE.ShaderMaterial;
   private readonly computer: Computer;
   private readonly glow: THREE.PointLight;
+  private readonly lifeFloor: LifeFloor;
   private readonly startedAt = performance.now();
 
   private progress = 0;
@@ -91,13 +93,13 @@ export class HeroScene {
   static async create(
     canvas: HTMLCanvasElement,
     screenCanvas: HTMLCanvasElement,
-    opts: { version: string; modelUrl: string | undefined },
+    opts: { version: string; modelUrl: string | undefined; floorIntensity?: number },
   ): Promise<HeroScene> {
     const texture = new THREE.CanvasTexture(screenCanvas);
     texture.anisotropy = 8;
     const crt = crtMaterial(texture);
     const computer = await loadComputer(opts.modelUrl, crt, opts.version);
-    return new HeroScene(canvas, texture, crt, computer);
+    return new HeroScene(canvas, texture, crt, computer, opts.floorIntensity ?? 1);
   }
 
   private constructor(
@@ -105,6 +107,7 @@ export class HeroScene {
     screenTexture: THREE.CanvasTexture,
     crt: THREE.ShaderMaterial,
     computer: Computer,
+    floorIntensity: number,
   ) {
     this.screenTexture = screenTexture;
     this.crt = crt;
@@ -162,7 +165,8 @@ export class HeroScene {
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(this.unitCenter.x, 0.001, this.unitCenter.z + 0.05);
-    this.scene.add(floor, shadow);
+    this.lifeFloor = new LifeFloor(this.unitCenter, floorIntensity);
+    this.scene.add(floor, this.lifeFloor.mesh, shadow);
 
     const key = new THREE.DirectionalLight('#ffffff', 1.3);
     key.position.set(3, 5, 4);
@@ -211,6 +215,12 @@ export class HeroScene {
 
   setProgress(p: number): void {
     if (p === this.progress) return;
+    // pulling back from a powered-on screen sends a wave across the floor,
+    // timed for when the floor comes back into shot
+    const waveAt = PHASE.holdEnd + 0.09;
+    if (this.power > 0 && this.progress <= waveAt && p > waveAt) {
+      this.lifeFloor.pulse(performance.now());
+    }
     this.progress = p;
     this.dirty = true;
   }
@@ -218,6 +228,7 @@ export class HeroScene {
   setPower(p: number): void {
     this.power = p;
     this.crt.uniforms.uPower!.value = p;
+    this.lifeFloor.setPower(p);
     for (const mat of this.computer.glowMaterials) {
       const off = (mat.userData.emissiveOff as number | undefined) ?? 0;
       const on = (mat.userData.emissiveOn as number | undefined) ?? 2;
@@ -230,6 +241,11 @@ export class HeroScene {
   setPointer(x: number, y: number): void {
     this.pointer.set(x, y);
     if (this.progress < PHASE.zoomEnd) this.dirty = true;
+  }
+
+  /** The hidden `life` command spills onto the floor. */
+  floodFloor(): void {
+    this.lifeFloor.flood();
   }
 
   screenChanged(): void {
@@ -298,14 +314,17 @@ export class HeroScene {
     if (!this.visible) return;
     // the CRT flickers only while it is on and filling the view
     const live = this.power > 0 && this.progress > PHASE.zoomEnd * 0.6 && this.progress < 0.95;
+    // the Life floor runs whenever the floor is in shot (not while the screen fills the view)
+    const floorInView = this.progress < PHASE.zoomEnd || this.progress > PHASE.holdEnd;
+    const now = performance.now();
     if (!this.dirty) {
-      // nothing moved: only the flicker is animating, which doesn't need 60fps
-      if (!live) return;
-      const now = performance.now();
+      // nothing moved: only the flicker and the floor are animating, which don't need 60fps
+      if (!live && !floorInView) return;
       if (now - this.lastLive < this.idleFrameMs) return;
       this.lastLive = now;
     }
-    this.crt.uniforms.uTime!.value = (performance.now() - this.startedAt) / 1000;
+    if (floorInView) this.lifeFloor.update(now);
+    this.crt.uniforms.uTime!.value = (now - this.startedAt) / 1000;
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.dirty = false;
