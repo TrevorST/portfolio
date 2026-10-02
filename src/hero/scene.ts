@@ -23,16 +23,46 @@ interface Pose {
   target: THREE.Vector3;
 }
 
-function shadowTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(0,0,0,0.85)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(c);
+/**
+ * The backdrop: a dome around the scene, void black overhead and far below,
+ * with a band of dark green light along the horizon where the grid runs out.
+ */
+function backdrop(): THREE.Mesh {
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(15, 32, 16),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      uniforms: {
+        uVoid: { value: VOID },
+        uHorizon: { value: new THREE.Color('#2a3d0c') },
+        uDeep: { value: new THREE.Color('#111d07') },
+      },
+      vertexShader: /* glsl */ `
+        varying vec3 vDir;
+        void main() {
+          vDir = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform vec3 uVoid;
+        uniform vec3 uHorizon;
+        uniform vec3 uDeep;
+        varying vec3 vDir;
+        void main() {
+          float h = normalize(vDir).y;
+          // a tight glow above the horizon, a longer fall-off into the depths below it
+          float band = h > 0.0 ? exp(-h * 9.0) : exp(h * 2.4);
+          vec3 base = h > 0.0 ? uVoid : mix(uVoid, uDeep, smoothstep(0.0, -0.6, h));
+          gl_FragColor = vec4(mix(base, uHorizon, band * 0.85), 1.0);
+        }
+      `,
+    }),
+  );
+  dome.renderOrder = -1;
+  return dome;
 }
 
 function isSoftwareRenderer(renderer: THREE.WebGLRenderer): boolean {
@@ -139,21 +169,9 @@ export class HeroScene {
 
     this.scene.add(this.computer.group);
 
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(12, 12),
-      // a plain dark slab; the grid is drawn in light by LaserFloor
-      new THREE.MeshStandardMaterial({ color: VOID, roughness: 0.95 }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    const shadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.1, 1.1),
-      new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false }),
-    );
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(this.unitCenter.x, 0.001, this.unitCenter.z + 0.05);
-    shadow.renderOrder = 2;
+    // no solid floor: the laser grid hangs in the void, over the backdrop's glow
     this.laser = new LaserFloor(this.unitCenter);
-    this.scene.add(floor, this.laser.mesh, shadow);
+    this.scene.add(backdrop(), this.laser.mesh);
 
     const key = new THREE.DirectionalLight('#ffffff', 1.3);
     key.position.set(3, 5, 4);
