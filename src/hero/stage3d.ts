@@ -59,6 +59,8 @@ export async function mountStage(
   const scene = await HeroScene.create(canvas, screen.canvas, {
     version: data.build.version,
     modelUrl: opts.modelUrl,
+    // ?life=0.5 or ?life=2 previews a dimmer or brighter floor
+    floorIntensity: Number(new URLSearchParams(location.search).get('life')) || 1,
   });
 
   const host: TerminalHost = {
@@ -73,6 +75,7 @@ export async function mountStage(
       track('terminal-command', { command });
       if (hidden) track('easter-egg', { command });
       if (command === 'resume') track('resume-view', { source: 'terminal' });
+      if (command === 'life') scene.floodFloor();
     },
   };
   const engine = new TerminalEngine({ data, commands, host });
