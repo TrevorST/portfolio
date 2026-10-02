@@ -40,7 +40,7 @@ function sessionFlag(write?: boolean): boolean {
 export async function mountStage(
   els: StageElements,
   data: SiteData,
-  opts: { hasModel: boolean },
+  opts: { modelUrl: string | undefined },
 ): Promise<Stage> {
   const { root, canvas, input, log } = els;
   const coarse = matchMedia('(pointer: coarse)').matches;
@@ -58,7 +58,7 @@ export async function mountStage(
   const screen = new TerminalCanvas(width, height, { rows: rowsFor(), font: FONT });
   const scene = await HeroScene.create(canvas, screen.canvas, {
     version: data.build.version,
-    hasModel: opts.hasModel,
+    modelUrl: opts.modelUrl,
   });
 
   const host: TerminalHost = {
