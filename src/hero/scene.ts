@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Computer } from './computer';
 import { crtMaterial } from './crt-material';
+import { LaserFloor } from './laser-floor';
 import { loadComputer } from './model';
 import { screenCorners, type ScreenSpec } from './screen-spec';
 
@@ -20,23 +21,6 @@ const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 interface Pose {
   pos: THREE.Vector3;
   target: THREE.Vector3;
-}
-
-function gridTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#07080A';
-  g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = '#262A2F';
-  g.lineWidth = 2;
-  g.strokeRect(0, 0, 128, 128);
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(48, 48); // 25 cm cells
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
 }
 
 function shadowTexture(): THREE.CanvasTexture {
@@ -70,6 +54,7 @@ export class HeroScene {
   private readonly crt: THREE.ShaderMaterial;
   private readonly computer: Computer;
   private readonly glow: THREE.PointLight;
+  private readonly laser: LaserFloor;
   private readonly startedAt = performance.now();
 
   private progress = 0;
@@ -156,7 +141,8 @@ export class HeroScene {
 
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(12, 12),
-      new THREE.MeshStandardMaterial({ map: gridTexture(), roughness: 0.95 }),
+      // a plain dark slab; the grid is drawn in light by LaserFloor
+      new THREE.MeshStandardMaterial({ color: VOID, roughness: 0.95 }),
     );
     floor.rotation.x = -Math.PI / 2;
     const shadow = new THREE.Mesh(
@@ -165,7 +151,9 @@ export class HeroScene {
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(this.unitCenter.x, 0.001, this.unitCenter.z + 0.05);
-    this.scene.add(floor, shadow);
+    shadow.renderOrder = 2;
+    this.laser = new LaserFloor(this.unitCenter);
+    this.scene.add(floor, this.laser.mesh, shadow);
 
     const key = new THREE.DirectionalLight('#ffffff', 1.3);
     key.position.set(3, 5, 4);
@@ -222,6 +210,12 @@ export class HeroScene {
 
   setProgress(p: number): void {
     if (p === this.progress) return;
+    // pulling back from a powered-on screen sends a burst out across the grid,
+    // timed for when the floor comes back into shot
+    const burstAt = PHASE.holdEnd + 0.09;
+    if (this.power > 0 && this.progress <= burstAt && p > burstAt) {
+      this.laser.burst(performance.now());
+    }
     this.progress = p;
     this.dirty = true;
   }
@@ -229,6 +223,7 @@ export class HeroScene {
   setPower(p: number): void {
     this.power = p;
     this.crt.uniforms.uPower!.value = p;
+    this.laser.setPower(p);
     for (const mat of this.computer.glowMaterials) {
       const off = (mat.userData.emissiveOff as number | undefined) ?? 0;
       const on = (mat.userData.emissiveOn as number | undefined) ?? 2;
@@ -319,14 +314,17 @@ export class HeroScene {
     if (!this.visible) return;
     // the CRT flickers only while it is on and filling the view
     const live = this.power > 0 && this.progress > PHASE.zoomEnd * 0.6 && this.progress < 0.95;
+    // the laser grid runs whenever the floor is in shot (not while the screen fills the view)
+    const floorInView = this.progress < PHASE.zoomEnd || this.progress > PHASE.holdEnd;
+    const now = performance.now();
     if (!this.dirty) {
-      // nothing moved: only the flicker is animating, which doesn't need 60fps
-      if (!live) return;
-      const now = performance.now();
+      // nothing moved: only the flicker and the floor are animating, which don't need 60fps
+      if (!live && !floorInView) return;
       if (now - this.lastLive < this.idleFrameMs) return;
       this.lastLive = now;
     }
-    this.crt.uniforms.uTime!.value = (performance.now() - this.startedAt) / 1000;
+    if (floorInView) this.laser.update(now);
+    this.crt.uniforms.uTime!.value = (now - this.startedAt) / 1000;
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.dirty = false;
