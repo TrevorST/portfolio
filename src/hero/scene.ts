@@ -86,6 +86,9 @@ export class HeroScene {
   private readonly unitCenter: THREE.Vector3;
   private holdPose: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   private wide: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+  /** How far the wide shot slides the picture sideways (fraction of the width). */
+  private wideShift = 0;
+  private size = { width: 1, height: 1 };
   private readonly exit: Pose;
 
   static async create(
@@ -181,6 +184,7 @@ export class HeroScene {
   resize(width: number, height: number): void {
     if (!width || !height) return;
     this.renderer.setSize(width, height, false);
+    this.size = { width, height };
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     // stand back far enough that the screen fills ~86% of the smaller axis
@@ -198,9 +202,16 @@ export class HeroScene {
           target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.3, 0)),
         }
       : {
-          pos: this.unitCenter.clone().add(new THREE.Vector3(0.8, 0.42, 1.7)),
-          target: this.unitCenter.clone().add(new THREE.Vector3(-0.22, 0.03, 0)),
+          // wider windows get a closer camera, so the unit grows with the screen
+          pos: this.unitCenter
+            .clone()
+            .add(new THREE.Vector3(0.8, 0.42, 1.7).multiplyScalar(this.wideScale())),
+          target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.02, 0)),
         };
+    // landscape: the unit sits in the right third, clear of the headline
+    this.wideShift = portrait
+      ? 0
+      : THREE.MathUtils.clamp(0.14 + (this.camera.aspect - 1) * 0.14, 0.12, 0.28);
     // square on to the screen, whichever way it faces (a tilted CRT included)
     this.holdPose = {
       pos: this.spec.center.clone().addScaledVector(this.spec.normal, d),
@@ -286,8 +297,18 @@ export class HeroScene {
     return { pos, target };
   }
 
+  /** 1 at 4:3, closer (smaller) as the window widens. */
+  private wideScale(): number {
+    return THREE.MathUtils.clamp(1.45 / this.camera.aspect, 0.74, 1);
+  }
+
   private updateCamera(): void {
     const { pos, target } = this.poseAt(this.progress);
+    // the sideways slide eases out as the camera pushes in, so the hold is dead centre
+    const shift = this.wideShift * (1 - smooth(this.progress / PHASE.zoomEnd));
+    const { width, height } = this.size;
+    if (shift > 0) this.camera.setViewOffset(width, height, -shift * width, 0, width, height);
+    else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     this.camera.position.copy(pos);
     this.camera.lookAt(target);
     this.camera.updateMatrixWorld();
