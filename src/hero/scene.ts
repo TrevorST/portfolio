@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Computer } from './computer';
 import { crtMaterial } from './crt-material';
+import { LaserFloor } from './laser-floor';
 import { loadComputer } from './model';
 import { screenCorners, type ScreenSpec } from './screen-spec';
 
@@ -22,33 +23,46 @@ interface Pose {
   target: THREE.Vector3;
 }
 
-function gridTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#07080A';
-  g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = '#262A2F';
-  g.lineWidth = 2;
-  g.strokeRect(0, 0, 128, 128);
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(48, 48); // 25 cm cells
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
-}
-
-function shadowTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(0,0,0,0.85)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(c);
+/**
+ * The backdrop: a dome around the scene, void black overhead and far below,
+ * with a band of dark green light along the horizon where the grid runs out.
+ */
+function backdrop(): THREE.Mesh {
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(15, 32, 16),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      uniforms: {
+        uVoid: { value: VOID },
+        uHorizon: { value: new THREE.Color('#2a3d0c') },
+        uDeep: { value: new THREE.Color('#111d07') },
+      },
+      vertexShader: /* glsl */ `
+        varying vec3 vDir;
+        void main() {
+          vDir = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform vec3 uVoid;
+        uniform vec3 uHorizon;
+        uniform vec3 uDeep;
+        varying vec3 vDir;
+        void main() {
+          float h = normalize(vDir).y;
+          // a tight glow above the horizon, a longer fall-off into the depths below it
+          float band = h > 0.0 ? exp(-h * 9.0) : exp(h * 2.4);
+          vec3 base = h > 0.0 ? uVoid : mix(uVoid, uDeep, smoothstep(0.0, -0.6, h));
+          gl_FragColor = vec4(mix(base, uHorizon, band * 0.85), 1.0);
+        }
+      `,
+    }),
+  );
+  dome.renderOrder = -1;
+  return dome;
 }
 
 function isSoftwareRenderer(renderer: THREE.WebGLRenderer): boolean {
@@ -70,6 +84,7 @@ export class HeroScene {
   private readonly crt: THREE.ShaderMaterial;
   private readonly computer: Computer;
   private readonly glow: THREE.PointLight;
+  private readonly laser: LaserFloor;
   private readonly startedAt = performance.now();
 
   private progress = 0;
@@ -86,6 +101,9 @@ export class HeroScene {
   private readonly unitCenter: THREE.Vector3;
   private holdPose: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   private wide: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+  /** How far the wide shot slides the picture sideways (fraction of the width). */
+  private wideShift = new THREE.Vector2();
+  private size = { width: 1, height: 1 };
   private readonly exit: Pose;
 
   static async create(
@@ -122,7 +140,10 @@ export class HeroScene {
       antialias: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // phones: 1.5x pixels is indistinguishable at arm's length and draws ~45% fewer than 2x
+    const coarse = matchMedia('(pointer: coarse)').matches;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
+    if (coarse) this.idleFrameMs = 1000 / 24;
     // software WebGL (SwiftShader, llvmpipe) renders on the CPU: go easy on it
     if (isSoftwareRenderer(this.renderer)) {
       this.renderer.setPixelRatio(1);
@@ -151,18 +172,9 @@ export class HeroScene {
 
     this.scene.add(this.computer.group);
 
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(12, 12),
-      new THREE.MeshStandardMaterial({ map: gridTexture(), roughness: 0.95 }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    const shadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.1, 1.1),
-      new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false }),
-    );
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(this.unitCenter.x, 0.001, this.unitCenter.z + 0.05);
-    this.scene.add(floor, shadow);
+    // no solid floor: the laser grid hangs in the void, over the backdrop's glow
+    this.laser = new LaserFloor(this.unitCenter);
+    this.scene.add(backdrop(), this.laser.mesh);
 
     const key = new THREE.DirectionalLight('#ffffff', 1.3);
     key.position.set(3, 5, 4);
@@ -181,6 +193,7 @@ export class HeroScene {
   resize(width: number, height: number): void {
     if (!width || !height) return;
     this.renderer.setSize(width, height, false);
+    this.size = { width, height };
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     // stand back far enough that the screen fills ~86% of the smaller axis
@@ -192,15 +205,30 @@ export class HeroScene {
     );
     // wide shot: unit to the right of the headline on landscape, below it on portrait
     const portrait = this.camera.aspect < 1;
+    // portrait: a head-on, slightly low hero shot. The unit is centred, so the
+    // grid runs to a single vanishing point behind it, and the camera stands
+    // back just far enough for the unit and its cords to fill the width.
+    const stand = THREE.MathUtils.clamp(0.66 / (2 * tan * this.camera.aspect * 0.9), 1.7, 3.4);
     this.wide = portrait
       ? {
-          pos: this.unitCenter.clone().add(new THREE.Vector3(0.42, 0.66, 2.45)),
-          target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.3, 0)),
+          pos: this.unitCenter.clone().add(new THREE.Vector3(0, stand * 0.24, stand)),
+          target: this.unitCenter.clone().add(new THREE.Vector3(0, -0.02, 0)),
         }
       : {
-          pos: this.unitCenter.clone().add(new THREE.Vector3(0.8, 0.42, 1.7)),
-          target: this.unitCenter.clone().add(new THREE.Vector3(-0.22, 0.03, 0)),
+          // wider windows get a closer camera, so the unit grows with the screen
+          pos: this.unitCenter
+            .clone()
+            .add(new THREE.Vector3(0.8, 0.42, 1.7).multiplyScalar(this.wideScale())),
+          target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.02, 0)),
         };
+    // landscape: the unit sits in the right third, clear of the headline
+    // portrait: the unit sits on the lower third, under the centred name
+    this.wideShift = portrait
+      ? new THREE.Vector2(0, 0.13)
+      : new THREE.Vector2(
+          THREE.MathUtils.clamp(0.14 + (this.camera.aspect - 1) * 0.14, 0.12, 0.28),
+          0,
+        );
     // square on to the screen, whichever way it faces (a tilted CRT included)
     this.holdPose = {
       pos: this.spec.center.clone().addScaledVector(this.spec.normal, d),
@@ -211,6 +239,12 @@ export class HeroScene {
 
   setProgress(p: number): void {
     if (p === this.progress) return;
+    // pulling back from a powered-on screen sends a burst out across the grid,
+    // timed for when the floor comes back into shot
+    const burstAt = PHASE.holdEnd + 0.09;
+    if (this.power > 0 && this.progress <= burstAt && p > burstAt) {
+      this.laser.burst(performance.now());
+    }
     this.progress = p;
     this.dirty = true;
   }
@@ -218,6 +252,7 @@ export class HeroScene {
   setPower(p: number): void {
     this.power = p;
     this.crt.uniforms.uPower!.value = p;
+    this.laser.setPower(p);
     for (const mat of this.computer.glowMaterials) {
       const off = (mat.userData.emissiveOff as number | undefined) ?? 0;
       const on = (mat.userData.emissiveOn as number | undefined) ?? 2;
@@ -286,8 +321,26 @@ export class HeroScene {
     return { pos, target };
   }
 
+  /** 1 at 4:3, closer (smaller) as the window widens. */
+  private wideScale(): number {
+    return THREE.MathUtils.clamp(1.45 / this.camera.aspect, 0.74, 1);
+  }
+
   private updateCamera(): void {
     const { pos, target } = this.poseAt(this.progress);
+    // the sideways slide eases out as the camera pushes in, so the hold is dead centre
+    const ease = 1 - smooth(this.progress / PHASE.zoomEnd);
+    const { width, height } = this.size;
+    if (ease > 0 && (this.wideShift.x || this.wideShift.y)) {
+      this.camera.setViewOffset(
+        width,
+        height,
+        -this.wideShift.x * ease * width,
+        -this.wideShift.y * ease * height,
+        width,
+        height,
+      );
+    } else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     this.camera.position.copy(pos);
     this.camera.lookAt(target);
     this.camera.updateMatrixWorld();
@@ -298,14 +351,17 @@ export class HeroScene {
     if (!this.visible) return;
     // the CRT flickers only while it is on and filling the view
     const live = this.power > 0 && this.progress > PHASE.zoomEnd * 0.6 && this.progress < 0.95;
+    // the laser grid runs whenever the floor is in shot (not while the screen fills the view)
+    const floorInView = this.progress < PHASE.zoomEnd || this.progress > PHASE.holdEnd;
+    const now = performance.now();
     if (!this.dirty) {
-      // nothing moved: only the flicker is animating, which doesn't need 60fps
-      if (!live) return;
-      const now = performance.now();
+      // nothing moved: only the flicker and the floor are animating, which don't need 60fps
+      if (!live && !floorInView) return;
       if (now - this.lastLive < this.idleFrameMs) return;
       this.lastLive = now;
     }
-    this.crt.uniforms.uTime!.value = (performance.now() - this.startedAt) / 1000;
+    if (floorInView) this.laser.update(now);
+    this.crt.uniforms.uTime!.value = (now - this.startedAt) / 1000;
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.dirty = false;
