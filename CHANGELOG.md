@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/TrevorST/portfolio/compare/v0.5.0...v0.6.0) (2026-10-03)
+
+
+### Features
+
+* hazard stripe between the 3D hero and Selected Work ([#36](https://github.com/TrevorST/portfolio/issues/36)) ([8115091](https://github.com/TrevorST/portfolio/commit/81150914f951d9666678b2b818e72e1a79da4610))
+
+
+### Fixes
+
+* hero name glitches to orange, not pink ([#35](https://github.com/TrevorST/portfolio/issues/35)) ([660b31e](https://github.com/TrevorST/portfolio/commit/660b31ef043e3b0e54f796c02b20ea5b05c5c0c1))
+
+
+### Content
+
+* rename Writing to Blog ([#37](https://github.com/TrevorST/portfolio/issues/37)) ([8591c6e](https://github.com/TrevorST/portfolio/commit/8591c6e9e009191befe6c0a97a55e6feea5de072))
+
 ## [0.5.0](https://github.com/TrevorST/portfolio/compare/v0.4.0...v0.5.0) (2026-10-03)
 
 
