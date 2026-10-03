@@ -7,11 +7,11 @@ import { getPosts } from '~/lib/content';
 const posts = await getPosts();
 ---
 
-<Base title="Writing" description="Notes on building things: tools, pipelines, and this site.">
+<Base title="Blog" description="Notes on building things: tools, pipelines, and this site.">
   <section class="section">
     <SectionHead
       idx="W"
-      title="Writing"
+      title="Blog"
       level={1}
       meta={`${String(posts.length).padStart(2, '0')} POSTS · RSS`}
     />

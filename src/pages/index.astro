@@ -95,7 +95,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <dd>{pad(projects.length)} on file</dd>
             <dt>Active</dt>
             <dd>{pad(activeCount)} in development</dd>
-            <dt>Writing</dt>
+            <dt>Blog</dt>
             <dd>
               {pad(posts.length)} {posts.length === 1 ? 'post' : 'posts'}
             </dd>
@@ -198,12 +198,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </a>
   </section>
 
-  <section class="section" aria-labelledby="writing">
-    <SectionHead idx="03" title="Writing" id="writing" meta={`${pad(posts.length)} POSTS · RSS`} />
+  <section class="section" aria-labelledby="blog">
+    <SectionHead idx="03" title="Blog" id="blog" meta={`${pad(posts.length)} POSTS · RSS`} />
     <PostList posts={posts.slice(0, 5)} />
     {posts.length > 5 && (
       <a class="btn ghost" href="/blog">
-        All writing ▸
+        All posts ▸
       </a>
     )}
   </section>
