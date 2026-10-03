@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/TrevorST/portfolio/compare/v0.4.0...v0.5.0) (2026-10-03)
+
+
+### Features
+
+* full-bleed hero with a laser grid over a gradient void ([#33](https://github.com/TrevorST/portfolio/issues/33)) ([2c7c8a8](https://github.com/TrevorST/portfolio/commit/2c7c8a8ef43faf396a8f9efb6a0a921328a6928b))
+
 ## [0.4.0](https://github.com/TrevorST/portfolio/compare/v0.3.0...v0.4.0) (2026-10-02)
 
 
