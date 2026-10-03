@@ -165,6 +165,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       </div>
     </div>
   </section>
+  <div slot="wide" class="hazard hero-edge" aria-hidden="true"></div>
   <script type="application/json" id="terminal-data" set:html={JSON.stringify(termData)} />
   <section class="section" aria-labelledby="work">
     <SectionHead
@@ -312,6 +313,16 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .hero-input,
   .hero-log {
     display: none;
+  }
+
+  /* the stripe that closes the 3D scene; the flat hero ends in a plain rule */
+  .hero-edge {
+    display: none;
+    position: relative;
+    z-index: 1;
+  }
+  :global(html[data-hero='3d']) .hero-edge {
+    display: block;
   }
 
   /* ---------- hero: 3D (html[data-hero='3d']) ---------- */
