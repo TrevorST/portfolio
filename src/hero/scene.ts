@@ -205,10 +205,14 @@ export class HeroScene {
     );
     // wide shot: unit to the right of the headline on landscape, below it on portrait
     const portrait = this.camera.aspect < 1;
+    // portrait: a head-on, slightly low hero shot. The unit is centred, so the
+    // grid runs to a single vanishing point behind it, and the camera stands
+    // back just far enough for the unit and its cords to fill the width.
+    const stand = THREE.MathUtils.clamp(0.66 / (2 * tan * this.camera.aspect * 0.9), 1.7, 3.4);
     this.wide = portrait
       ? {
-          pos: this.unitCenter.clone().add(new THREE.Vector3(0.44, 0.64, 2.5)),
-          target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.3, 0)),
+          pos: this.unitCenter.clone().add(new THREE.Vector3(0, stand * 0.24, stand)),
+          target: this.unitCenter.clone().add(new THREE.Vector3(0, -0.02, 0)),
         }
       : {
           // wider windows get a closer camera, so the unit grows with the screen
@@ -218,9 +222,9 @@ export class HeroScene {
           target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.02, 0)),
         };
     // landscape: the unit sits in the right third, clear of the headline
-    // portrait: the unit sits low and to the right, under the centred name
+    // portrait: the unit sits on the lower third, under the centred name
     this.wideShift = portrait
-      ? new THREE.Vector2(0.18, -0.04)
+      ? new THREE.Vector2(0, 0.13)
       : new THREE.Vector2(
           THREE.MathUtils.clamp(0.14 + (this.camera.aspect - 1) * 0.14, 0.12, 0.28),
           0,
