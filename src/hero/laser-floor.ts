@@ -45,16 +45,19 @@ export class LaserFloor {
         uniform float uBurst;
         varying vec2 vWorld;
 
+        // arithmetic hash (no sin): cheap and stable on mobile GPUs
         float hash(float n) {
-          return fract(sin(n * 127.1 + 311.7) * 43758.5453);
+          n = fract(n * 0.1031);
+          n *= n + 33.33;
+          n *= n + n;
+          return fract(n);
         }
 
         // One family of parallel lines. across: grid coordinate across the lines,
         // along: grid coordinate along them. Returns (beam, pulse).
-        vec2 lines(float across, float along, float salt) {
+        vec2 lines(float across, float along, float aa, float salt) {
           float id = floor(across + 0.5);
           float dist = abs(across - id);
-          float aa = fwidth(across);
           // a hard core and a soft glow, thinned out where lines crowd together far away
           float core = 1.0 - smoothstep(0.012, 0.012 + aa, dist);
           float glow = exp(-dist * dist * 900.0) * 0.35;
@@ -72,13 +75,17 @@ export class LaserFloor {
 
         void main() {
           vec2 g = vWorld / ${PITCH.toFixed(2)};
-          vec2 a = lines(g.y, g.x, 0.0);
-          vec2 b = lines(g.x, g.y, 101.0);
-          float beam = max(a.x, b.x);
-          float pulse = a.y + b.y;
-
+          // derivatives first: they must be taken before any pixel is discarded
+          vec2 aa = fwidth(g);
           float d = distance(vWorld, uCenter);
           float far = 1.0 - smoothstep(2.6, 5.8, d);
+          // most of the plane is past the fade: skip the line maths there entirely
+          if (far <= 0.0) discard;
+
+          vec2 a = lines(g.y, g.x, aa.y, 0.0);
+          vec2 b = lines(g.x, g.y, aa.x, 101.0);
+          float beam = max(a.x, b.x);
+          float pulse = a.y + b.y;
           // the burst: a ring racing outward that lights every line it crosses
           float ring = uBurst < 0.0 ? 0.0 : exp(-pow((d - uBurst) / 0.3, 2.0)) * (1.0 - uBurst / 6.0);
 

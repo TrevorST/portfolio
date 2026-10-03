@@ -102,7 +102,7 @@ export class HeroScene {
   private holdPose: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   private wide: Pose = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   /** How far the wide shot slides the picture sideways (fraction of the width). */
-  private wideShift = 0;
+  private wideShift = new THREE.Vector2();
   private size = { width: 1, height: 1 };
   private readonly exit: Pose;
 
@@ -140,7 +140,10 @@ export class HeroScene {
       antialias: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // phones: 1.5x pixels is indistinguishable at arm's length and draws ~45% fewer than 2x
+    const coarse = matchMedia('(pointer: coarse)').matches;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
+    if (coarse) this.idleFrameMs = 1000 / 24;
     // software WebGL (SwiftShader, llvmpipe) renders on the CPU: go easy on it
     if (isSoftwareRenderer(this.renderer)) {
       this.renderer.setPixelRatio(1);
@@ -204,7 +207,7 @@ export class HeroScene {
     const portrait = this.camera.aspect < 1;
     this.wide = portrait
       ? {
-          pos: this.unitCenter.clone().add(new THREE.Vector3(0.42, 0.66, 2.45)),
+          pos: this.unitCenter.clone().add(new THREE.Vector3(0.44, 0.64, 2.5)),
           target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.3, 0)),
         }
       : {
@@ -215,9 +218,13 @@ export class HeroScene {
           target: this.unitCenter.clone().add(new THREE.Vector3(0, 0.02, 0)),
         };
     // landscape: the unit sits in the right third, clear of the headline
+    // portrait: the unit sits low and to the right, under the centred name
     this.wideShift = portrait
-      ? 0
-      : THREE.MathUtils.clamp(0.14 + (this.camera.aspect - 1) * 0.14, 0.12, 0.28);
+      ? new THREE.Vector2(0.18, -0.04)
+      : new THREE.Vector2(
+          THREE.MathUtils.clamp(0.14 + (this.camera.aspect - 1) * 0.14, 0.12, 0.28),
+          0,
+        );
     // square on to the screen, whichever way it faces (a tilted CRT included)
     this.holdPose = {
       pos: this.spec.center.clone().addScaledVector(this.spec.normal, d),
@@ -318,10 +325,18 @@ export class HeroScene {
   private updateCamera(): void {
     const { pos, target } = this.poseAt(this.progress);
     // the sideways slide eases out as the camera pushes in, so the hold is dead centre
-    const shift = this.wideShift * (1 - smooth(this.progress / PHASE.zoomEnd));
+    const ease = 1 - smooth(this.progress / PHASE.zoomEnd);
     const { width, height } = this.size;
-    if (shift > 0) this.camera.setViewOffset(width, height, -shift * width, 0, width, height);
-    else if (this.camera.view?.enabled) this.camera.clearViewOffset();
+    if (ease > 0 && (this.wideShift.x || this.wideShift.y)) {
+      this.camera.setViewOffset(
+        width,
+        height,
+        -this.wideShift.x * ease * width,
+        -this.wideShift.y * ease * height,
+        width,
+        height,
+      );
+    } else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     this.camera.position.copy(pos);
     this.camera.lookAt(target);
     this.camera.updateMatrixWorld();

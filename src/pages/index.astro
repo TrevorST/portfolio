@@ -369,8 +369,23 @@ const pad = (n: number) => String(n).padStart(2, '0');
     max-width: 44rem;
   }
   @media (orientation: portrait) {
+    /* phones and tall windows: the name big and centred up top, the computer below it */
     :global(html[data-hero='3d']) .intro {
+      grid-template-rows: auto auto auto 1fr;
       align-content: start;
+      justify-items: center;
+      text-align: center;
+      gap: 18px;
+    }
+    :global(html[data-hero='3d']) .hero-meta {
+      justify-content: center;
+    }
+    :global(html[data-hero='3d']) .intro h1 {
+      /* TREVOR is about 6.2em wide: 13.5vw keeps it on one line with the gutters */
+      font-size: clamp(2.5rem, 13.5vw, 8rem);
+      max-width: none;
+      overflow-wrap: normal;
+      white-space: nowrap;
     }
     :global(html[data-hero='3d']) .hero-foot {
       display: none; /* the computer sits in the lower half on phones */
